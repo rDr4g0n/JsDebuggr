@@ -33,6 +33,8 @@ Additionally, the right click menu allows for:
 * clear all
 
 
-Also...
+More Details
 -------
-This is my first ever: python project, sublime plugin, open-source project, ever, so I suspect it needs lots of work...
+This is my first ever: python project, sublime plugin, open-source project, github project, etc, so I suspect it needs lots of work... I developed it in ST3, but everything appears to work in ST2. I suspect the code organization can be improved. There are a few hacky bits in there. Also, I know I probably did some things the hard way in places. And hey, maybe I am the only person who will ever use this kind of plugin lol  
+
+There are a few bugs I know about already, and they are mentioned in the .py file mostly for my own reference as I improve stuff.
