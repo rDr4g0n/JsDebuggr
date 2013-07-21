@@ -1,0 +1,43 @@
+[{
+	"id": "JsDgb-all",
+	"caption": "JsDbg",
+	"children": [
+		{
+			"id": "JsDgb-conditional",
+			"caption": "Add Conditional",
+			"command": "conditional_breakpoint"
+		},{
+			"id": "JsDgb-toggleEnable",
+			"caption": "Enable/Disable",
+			"command": "js_debuggr",
+			"args": {
+				"toggleEnable": true
+			}
+		},{
+			"id": "JsDgb-enableAll",
+			"caption": "Enable All",
+			"command": "js_debuggr",
+			"args": {
+				"enableAll": true
+			}
+		},{
+			"id": "JsDgb-disableAll",
+			"caption": "Disable All",
+			"command": "js_debuggr",
+			"args": {
+				"disableAll": true
+			}
+		},{
+			"id": "JsDgb-clearAll",
+			"caption": "Clear All",
+			"command": "js_debuggr",
+			"args": {
+				"clearAll": true
+			}
+		}
+	]
+},{
+	"id": "JsDgb-toggle",
+	"caption": "JsDbg - Add/Remove Breakpoint",
+	"command": "js_debuggr"
+}]

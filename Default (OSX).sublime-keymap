@@ -1,0 +1,5 @@
+[
+	{ "keys": ["super+f10"], "command": "js_debuggr" },
+	{ "keys": ["alt+f10"], "command": "conditional_breakpoint" },
+	{ "keys": ["super+shift+f10"], "command": "js_debuggr", "args": {"toggleEnable": true}}
+]
