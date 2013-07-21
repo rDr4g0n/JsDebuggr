@@ -12,6 +12,11 @@ JsDebuggr can add, remove, enable, and disable breakpoints. It can also create c
 JsDebuggr can also scan files for existing `debugger` statements and add breakpoints for those statements. In the future, it will be able to store breakpoint sets for easy swapping of debugging tasks.
 
 
+Installation
+------------
+Clone the repo to your Sublime Text `Packages folder`. Something like this should work: `C:\Users\User\AppData\Roaming\Sublime Text 2\Packages\JsDebuggr\`
+
+
 Settings
 --------
 JsDebuggr has only a handful of settings for now. They can be found in the `JsDebuggr.sublime-settings` file.  
