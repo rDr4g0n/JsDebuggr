@@ -4,6 +4,10 @@ Debugging javascript can be tedious due to the lack of integration between the c
 
 The way it works is by adding the `debugger` keyword to the specified line. If the web browser's dev tools window is opened, this keyword acts as a breakpoint, giving the user an opportunity to review variable values, the call stack, etc.
 
+![ScreenShot](https://raw.github.com/rDr4g0n/JsDebuggr/master/screen1.png)
+
+The benefit of a plugin to do this over entering debugger statements manually is a minor, but noteworthy one: cleaning up or disabling all the debug statements after a long and messy debug session is quick and easy.
+
 
 Features
 --------
