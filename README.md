@@ -4,6 +4,7 @@ Debugging javascript can be tedious due to the lack of integration between the c
 
 The way it works is by adding the `debugger` keyword to the specified line. If the web browser's dev tools window is opened, this keyword acts as a breakpoint, giving the user an opportunity to review variable values, the call stack, etc.
 
+
 Features
 --------
 JsDebuggr can add, remove, enable, and disable breakpoints. It can also create conditional breakpoints, that will only trigger if a provided condition is met. It can also scan files for existing `debugger` statements and add breakpoints for those statements. In the future, it will be able to store breakpoint sets for easy swapping of debugging tasks.
@@ -30,3 +31,8 @@ Additionally, the right click menu allows for:
 * enable all
 * disable all
 * clear all
+
+
+Also...
+-------
+This is my first ever: python project, sublime plugin, open-source project, ever, so I suspect it needs lots of work...
