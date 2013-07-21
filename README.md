@@ -7,7 +7,9 @@ The way it works is by adding the `debugger` keyword to the specified line. If t
 
 Features
 --------
-JsDebuggr can add, remove, enable, and disable breakpoints. It can also create conditional breakpoints, that will only trigger if a provided condition is met. It can also scan files for existing `debugger` statements and add breakpoints for those statements. In the future, it will be able to store breakpoint sets for easy swapping of debugging tasks.
+JsDebuggr can add, remove, enable, and disable breakpoints. It can also create conditional breakpoints, that will only trigger if a provided condition is met.
+
+JsDebuggr can also scan files for existing `debugger` statements and add breakpoints for those statements. In the future, it will be able to store breakpoint sets for easy swapping of debugging tasks.
 
 
 Settings
@@ -15,7 +17,7 @@ Settings
 JsDebuggr has only a handful of settings for now. They can be found in the `JsDebuggr.sublime-settings` file.  
 
 * `scan_on_load` indicates if files should be scanned for existing `debugger` statements when a document is loaded.
-* `file_type_list` is an array of file extensions that should be scanned. The default extensions are html and js.
+* `file_type_list` is an array of file extensions that should be enabled for scanning and tracking. The default value is `["html", "htm", "js"]`.
 
 
 Key Bindings
