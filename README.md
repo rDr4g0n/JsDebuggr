@@ -6,9 +6,13 @@ The way it works is by adding the `debugger` keyword to the specified line. If t
 
 ![ScreenShot](https://raw.github.com/rDr4g0n/JsDebuggr/master/screen1.png)
 
-The benefit of a plugin to do this over entering debugger statements manually is a minor, but noteworthy one: cleaning up or disabling all the debug statements after a long and messy debug session is quick and easy.
-
-Oh! Oh! and if you're debugging code that is injected via js or evaluated with eval, this serves as an easy way to set breakpoints within that code.
+The benefits of a plugin to do this over entering debugger statements manually are minor, but all add up:
+* Adding the debugger statement is done in 2 clicks or with a keyboard shortcut rather than typing it out
+* Debugger statements are marked in the gutter with a dot like a breakpoint in an IDE
+* Breakpoints can be enabled/disabled individually or all with one command
+* Breakpoints can be removed all at once with a single commend, so cleaning up or disabling all the debug statements after a long and messy debug session is quick and easy
+* When adding breakpoints in your browser dev tool, if you add or remove a line from the js then refresh the page, all the breakpoints will be off by a line. Using the debugger statement, all the breakpoints are always exactly where you place them
+* It's more complex (or not possible at all) to debug injected or eval'd code with dev tools. That's not a problem with the debugger statement
 
 
 Features
