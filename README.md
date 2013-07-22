@@ -8,6 +8,8 @@ The way it works is by adding the `debugger` keyword to the specified line. If t
 
 The benefit of a plugin to do this over entering debugger statements manually is a minor, but noteworthy one: cleaning up or disabling all the debug statements after a long and messy debug session is quick and easy.
 
+Oh! Oh! and if you're debugging code that is injected via js or evaluated with eval, this serves as an easy way to set breakpoints within that code.
+
 
 Features
 --------
