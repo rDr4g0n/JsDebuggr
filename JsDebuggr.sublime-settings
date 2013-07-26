@@ -17,5 +17,6 @@
 	// A boolean indicating if debugger statements should be displayed to the user. If set to
 	// false they will be written to the document before save, then cleared after save, so that 
 	// the saved document contains the statements but the displayed document does not.
+	// NOTE - not yet implemented...
 	"show_debugger_statements": true
 }
