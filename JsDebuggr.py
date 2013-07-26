@@ -7,10 +7,6 @@ import re
 
 # TODO - can context menu be edited at runtime? (remove JsDebuggr for non-js files, show context sensitive options, etc)
 # TODO - future feature - load, save, delete breakpoint sets
-# TODO - ST2 version
-# BUG - // in strings incorrectly detected as comment
-# BUG - enable/disabling auto scanned breakpoints is unreliable
-# BUG - auto scanning conditional breakpoints isnt accounted for
 
 settings = sublime.load_settings("JsDebuggr.sublime-settings")
 
@@ -368,7 +364,7 @@ class DocUpdate(sublime_plugin.EventListener):
                 #add breakpoint line marker to view
                 view.add_regions(breakpoint.id, [r], breakpoint.scope, "circle", sublime.HIDDEN | sublime.PERSISTENT)
 
-    def on_modified_async(self, view):
+    def on_modified(self, view):
         if not self.process:
             # print("not a js or html doc, so not processing")
             return
@@ -409,4 +405,4 @@ class DocUpdate(sublime_plugin.EventListener):
                 JsDebuggr.breakpoints[viewId] = newBreakpoints
 
             #update new number of lines
-            # self.numLines[viewId] = currNumLines
+            self.numLines[viewId] = currNumLines
