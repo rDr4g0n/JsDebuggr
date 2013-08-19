@@ -1,6 +1,6 @@
 Note
 ---------
-Being my first python project, the code is kinda messy and doesn't work as intended. It is currently undergoing a complete refactor, so maybe just hold off on using it for now ;)
+Being my first python project, the code is kinda messy and is pretty buggy. It is currently undergoing a complete refactor, so maybe just hold off on using it for now ;)
 
 Summary
 ---------
