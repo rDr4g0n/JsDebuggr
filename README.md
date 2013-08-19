@@ -1,3 +1,7 @@
+Note
+---------
+Being my first python project, the code is kinda messy and doesn't work as intended. It is currently undergoing a complete refactor, so maybe just hold off on using it for now ;)
+
 Summary
 ---------
 Debugging javascript can be tedious due to the lack of integration between the code editor and the browsers' debugging tools. JsDebuggr aims to make it a tad easier by allowing Sublime Text to mark breakpoints for the web browser debugging tools.  
