@@ -1,3 +1,8 @@
+Note
+-----
+This plugin/project still has some bugs to work out before it can be used day-to-day...
+
+
 Summary
 ---------
 Debugging javascript can be tedious due to the lack of integration between the code editor and the browsers' debugging tools. JsDebuggr aims to make it a tad easier by allowing Sublime Text to mark breakpoints for the web browser debugging tools.  
