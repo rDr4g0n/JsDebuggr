@@ -1,22 +1,4 @@
 {
-	// A boolean indicating if JsDebuggr should scan documents for existing
-	// debugger statements and add breakpoints for them
-	"scan_on_load": true,
-
 	// An array of file types (by extension) that will be tracked for debugging
-	"file_type_list": ["htm", "html", "js"],
-
-	// The breakpoint color is set by the current sublime theme. for instance, most themes
-	// have comments as a sorta grayed out color, so the disabled breakpoint matches well
-	// with "comment". "keyword" is a distinctive color, so that makes a good match for
-	// an enabled comment. possible values are any valid sublime text scope
-	"breakpoint_color_disabled": "comment",
-	"breakpoint_color_enabled": "keyword",
-	"breakpoint_color_conditional": "string",
-
-	// A boolean indicating if debugger statements should be displayed to the user. If set to
-	// false they will be written to the document before save, then cleared after save, so that 
-	// the saved document contains the statements but the displayed document does not.
-	// NOTE - not yet implemented...
-	"show_debugger_statements": true
+	"file_type_list": ["htm", "html", "js"]
 }
