@@ -4,8 +4,6 @@ Debugging javascript can be tedious due to the lack of integration between the c
 
 The way JsDebuggr works is by inserting the `debugger;` statement at each breakpoint when the document is saved. If the web browser's dev tools window is opened, this keyword acts as a breakpoint, giving the user an opportunity to review variable values, the call stack, etc.
 
-![ScreenShot](https://raw.github.com/rDr4g0n/JsDebuggr/master/screen1.png)
-
 The benefits of a plugin to do this over entering debugger statements manually are minor, but all add up:
 * Adding the debugger statement is done in 2 clicks or with a keyboard shortcut rather than typing it out
 * Debugger statements are marked in the gutter with a dot like a breakpoint in an IDE
