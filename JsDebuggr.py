@@ -119,8 +119,11 @@ class BreakpointList():
 
     #adjusts breakpoint line numbers due to insertions/removals
     #TODO - this should prolly be more... generic. or placed elsewhere?
-    def shift(self, added, cursorLine):
+    def shift(self, added, view):
         newBreakpoints = {}
+        cursorRowCol = view.rowcol(view.sel()[0].a)
+        cursorLine = cursorRowCol[0] + 1
+        cursorPos = cursorRowCol[1]
 
         #any breakpoint with a lineNum > cursorLine should be updated
         for lineNum in self.breakpoints:
@@ -131,6 +134,8 @@ class BreakpointList():
             print([lineNumInt, cursorLine])
             #if lines were removed and this breakpoint is within
             #the removal, it should be removed from the list
+            #TODO - if cursor is at position 0 on the line, don't
+            #       trigger breakpoint delete
             if (
                 added < 0 and lineNumInt > cursorLine and
                 lineNumInt <= cursorLine - added
@@ -138,9 +143,8 @@ class BreakpointList():
                 print("removing breakpoint at line %s - line has been deleted" % lineNum)
                 self.view.erase_regions(self.breakpoints[lineNum].id)
             #if this breakpoint is beyond the cursor, it needs to shift
-            #TODO - select end of breakpointed line and hit enter. it will incorrectly
-            #   shift this line :( need to know if the line was actually moved, or if a
-            #   new line was inserted below
+            #TODO - if lineNumInt == cursorLine-1 and cursorPos isn't 0
+            #       don't shift
             elif (
                 added > 0 and lineNumInt >= cursorLine-1 or
                 added < 0 and lineNumInt > cursorLine
@@ -323,7 +327,7 @@ class EventListener(sublime_plugin.EventListener):
             #NOTE - this only supports single cursor operations
             cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
             #TODO - shift method might need a refactor/rename
-            breakpointList.shift(added, cursorLine)
+            breakpointList.shift(added, view)
 
             #update new number of lines
             self.numLines[viewId] = currNumLines

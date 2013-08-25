@@ -53,4 +53,5 @@ JsDebuggr has only a handful of settings for now. They can be found in the `JsDe
 Future Features
 -----
 * save and load of multiple breakpoint sets
-* many bugfixes and improvements
+* persist disabled breakpoints through document close/open
+* disable context menu options when they are not valid
