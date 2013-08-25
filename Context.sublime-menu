@@ -7,6 +7,20 @@
 			"caption": "Add/Remove Breakpoint",
 			"command": "js_debuggr"
 		},{
+			"id": "JsDebuggr-conditional",
+			"caption": "Add Conditional Breakpoint",
+			"command": "js_debuggr",
+			"args": {
+				"conditional": true
+			}
+		},{
+			"id": "JsDebuggr-edit_conditional",
+			"caption": "Edit Conditional Breakpoint",
+			"command": "js_debuggr",
+			"args": {
+				"editConditional": true
+			}
+		},{
 			"id": "JsDebuggr-remove_all",
 			"caption": "Remove All Breakpoints",
 			"command": "js_debuggr",

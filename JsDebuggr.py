@@ -9,9 +9,12 @@ import re
 BREAK_SCOPE = "keyword"
 BREAK_DISABLED_SCOPE = "comment"
 CONDITIONAL_SCOPE = "string"
-DEBUG_STATEMENT = "debugger;"
 FILE_TYPE_LIST = ["html", "htm", "js"]
 AUTOSCAN_ON_LOAD = True
+
+DEBUG_STATEMENT = "/*JsDbg*/debugger;"
+CONDITIONAL_BEGIN_MARKER = "/*JsDbg-Begin*/"
+CONDITIONAL_END_MARKER = "/*JsDbg-End*/"
 
 
 #collection containing a list of breakpoints and a number
@@ -47,7 +50,7 @@ class BreakpointList():
             self.add(lineNum)
             return True
 
-    def add(self, lineNum):
+    def add(self, lineNum, condition=None):
         lineNumStr = str(lineNum)
 
         #setup breakpoint
@@ -61,7 +64,8 @@ class BreakpointList():
             "lineNum": lineNum,
             "enabled": True,
             "scope": scope,
-            "debugger": debugger
+            "debugger": debugger,
+            "condition": condition
         })
         #register breakpoint
         self.breakpoints[lineNumStr] = breakpoint
@@ -156,14 +160,24 @@ class BreakpointList():
 
 #model containing information about each breakpoint
 class Breakpoint():
-    def __init__(self, lineNum=0, lineText="", enabled=True, scope=BREAK_SCOPE, debugger=DEBUG_STATEMENT, conditional=False):
+    def __init__(self, lineNum=0, lineText="", enabled=True, scope=BREAK_SCOPE, debugger=DEBUG_STATEMENT, condition=False):
         self.id = str(uuid.uuid4())
         self.lineNum = lineNum
         self.lineText = lineText
         self.enabled = True
         self.scope = scope
         self.debugger = debugger
-        self.conditional = conditional
+        self.condition = condition
+
+        if self.condition:
+            self.set_condition(condition)
+
+    def set_condition(self, condition):
+        self.condition = condition
+        self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
+        #HACK - setting CONDITIONAL_SCOPE here is all hacksy
+        self.scope = CONDITIONAL_SCOPE
+        print("conditional break: %s" % self.debugger)
 
 
 # handle text commands from user
@@ -182,6 +196,10 @@ class JsDebuggr(sublime_plugin.TextCommand):
             breakpointList.enable_all()
         elif(options and "disableAll" in options):
             breakpointList.disable_all()
+        elif(options and "conditional" in options):
+            self.add_conditional_input()
+        elif(options and "editConditional" in options):
+            self.edit_conditional_input()
         else:
             self.toggle_break()
 
@@ -216,9 +234,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
 
     def toggle_enable_break(self):
         breakpointList = self.get_breakpointList(self.view)
-
         lineNum = self.get_line_nums()[0]
-
         breakpoint = breakpointList.get(lineNum)
 
         if breakpoint.enabled:
@@ -229,6 +245,31 @@ class JsDebuggr(sublime_plugin.TextCommand):
             #breakpoint is disabled, so enabled it
             print("enabling breakpoint")
             breakpointList.enable(lineNum)
+
+    def add_conditional_input(self):
+        self.view.window().show_input_panel("Enter Condition:", "", self.add_conditional, None, None)
+
+    def add_conditional(self, text):
+        breakpointList = self.get_breakpointList(self.view)
+        lineNum = self.get_line_nums()[0]
+        breakpointList.add(lineNum, text)
+
+    def edit_conditional_input(self):
+        breakpointList = self.get_breakpointList(self.view)
+        lineNum = self.get_line_nums()[0]
+        breakpoint = breakpointList.get(lineNum)
+        if breakpoint.condition:
+            self.view.window().show_input_panel("Enter Condition:", breakpoint.condition, self.edit_conditional, None, None)
+
+    def edit_conditional(self, text):
+        print(text)
+        breakpointList = self.get_breakpointList(self.view)
+        lineNum = self.get_line_nums()[0]
+        breakpoint = breakpointList.get(lineNum)
+        #TODO - remove old debugger statement from document first?
+        breakpoint.set_condition(text)
+        #TODO - set_status probably doesn't belong here
+        self.view.set_status(breakpoint.id, "condition: %s" % breakpoint.condition)
 
 
 #write the debugger; statements to the document before save
@@ -263,6 +304,7 @@ class EventListener(sublime_plugin.EventListener):
 
     numLines = {}
     track = True
+    setStatuses = []
 
     def on_modified(self, view):
         if not self.track:
@@ -291,6 +333,7 @@ class EventListener(sublime_plugin.EventListener):
             return
 
         #insert debugger; statments
+        print("inserting debuggers")
         view.run_command("write_debug")
         pass
 
@@ -298,6 +341,7 @@ class EventListener(sublime_plugin.EventListener):
         if not self.track:
             return
 
+        print("clearing debuggers")
         view.run_command("clear_debug")
         pass
 
@@ -305,7 +349,6 @@ class EventListener(sublime_plugin.EventListener):
         #settings = sublime.load_settings("JsDebuggr.sublime-settings")
 
         file_type_list = FILE_TYPE_LIST
-        print(file_type_list)
         extension = view.file_name().split(".")[-1]
         if not extension in file_type_list:
             print("Not tracking document because it is not of the correct type.")
@@ -330,7 +373,31 @@ class EventListener(sublime_plugin.EventListener):
             existingDebuggers = view.find_all(r'%s' % re.escape(DEBUG_STATEMENT))
             print("found %i exiting debugger statements" % len(existingDebuggers))
             for region in existingDebuggers:
-                breakpointList.add(view.rowcol(region.a)[0] + 1)
+                condition = None
+                #TODO - this whole conditional check is very ugly and hacky. there
+                #       has to be a smarter way to do it... prolly a simple regex lawl
+                lineText = view.substr(view.line(region))
+                conditionalBegin = re.search(r'%s' % re.escape(CONDITIONAL_BEGIN_MARKER), lineText)
+                if conditionalBegin:
+                    #this is a conditional break, so get the condition
+                    conditionalEnd = re.search(r'%s' % re.escape(CONDITIONAL_END_MARKER), lineText)
+                    condition = lineText[conditionalBegin.end(0): conditionalEnd.start(0)]
+                    print("existing debugger is a conditional: '%s'" % condition)
+
+                breakpointList.add(view.rowcol(region.a)[0] + 1, condition)
 
             #clear any debugger; statements from the doc
             view.run_command("clear_debug")
+
+    def on_selection_modified(self, view):
+        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
+        cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
+        breakpoint = breakpointList.get(cursorLine)
+        if breakpoint and breakpoint.condition:
+            view.set_status(breakpoint.id, "condition: %s" % breakpoint.condition)
+            self.setStatuses.append(breakpoint.id)
+        else:
+            #TODO - this whole setStatuses list seems kinda hacky...
+            for id in self.setStatuses:
+                view.erase_status(id)
+            self.setStatuses = []

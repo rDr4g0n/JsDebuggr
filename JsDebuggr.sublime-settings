@@ -1,5 +1,9 @@
 {
 	// An array of file types (by extension) that will be tracked for debugging
 	"file_type_list": ["htm", "html", "js"],
+
+	// Bool indicating if JsDebuggr should scan the document on load and create
+	// breakpoints for existing debugger; statements. Note that this will only
+	// scan for debugger's placed by JsDebuggr.
 	"autoscan_on_load": true
 }
