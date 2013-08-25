@@ -9,8 +9,9 @@ import re
 BREAK_SCOPE = "keyword"
 BREAK_DISABLED_SCOPE = "comment"
 CONDITIONAL_SCOPE = "string"
-DEBUG_STATEMENT = "debugger; "
+DEBUG_STATEMENT = "debugger;"
 FILE_TYPE_LIST = ["html", "htm", "js"]
+AUTOSCAN_ON_LOAD = True
 
 
 #collection containing a list of breakpoints and a number
@@ -238,6 +239,8 @@ class WriteDebug(sublime_plugin.TextCommand):
         for id in breakpointList.breakpoints:
             breakpoint = breakpointList.breakpoints[id]
             if breakpoint.enabled:
+                #TODO - find existing debugger; on this line and remove?
+                #   or maybe dont even write if debugger; already exists?
                 point = self.view.text_point(int(breakpoint.lineNum)-1, 0)
                 self.view.insert(edit, point, breakpoint.debugger)
 
@@ -295,7 +298,6 @@ class EventListener(sublime_plugin.EventListener):
         if not self.track:
             return
 
-        #TODO - remove debugger; statments
         view.run_command("clear_debug")
         pass
 
@@ -319,4 +321,16 @@ class EventListener(sublime_plugin.EventListener):
             self.numLines[viewId] = view.rowcol(view.size())[0] + 1
             print("setting numlines to %i" % self.numLines[viewId])
         #force create breakpoint list
-        JsDebuggr.get_breakpointList(JsDebuggr, view)
+
+        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
+
+        if AUTOSCAN_ON_LOAD:
+            #scan the doc for debugger; statements. if found, make em into
+            #breakpoints and remove the statement
+            existingDebuggers = view.find_all(r'%s' % re.escape(DEBUG_STATEMENT))
+            print("found %i exiting debugger statements" % len(existingDebuggers))
+            for region in existingDebuggers:
+                breakpointList.add(view.rowcol(region.a)[0] + 1)
+
+            #clear any debugger; statements from the doc
+            view.run_command("clear_debug")
