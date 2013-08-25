@@ -13,6 +13,27 @@
 			"args": {
 				"removeAll": true
 			}
+		},{
+			"id": "JsDebuggr-toggle_enable",
+			"caption": "Enable/Disable Breakpoint",
+			"command": "js_debuggr",
+			"args": {
+				"toggleEnable": true
+			}
+		},{
+			"id": "JsDebuggr-disable_all",
+			"caption": "Disable All Breakpoints",
+			"command": "js_debuggr",
+			"args": {
+				"disableAll": true
+			}
+		},{
+			"id": "JsDebuggr-enable_all",
+			"caption": "Enable All Breakpoints",
+			"command": "js_debuggr",
+			"args": {
+				"enableAll": true
+			}
 		}
 	]
 }]

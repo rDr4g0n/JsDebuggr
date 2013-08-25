@@ -17,29 +17,35 @@ Installation
 Clone the repo to your Sublime Text `Packages folder`. Something like this should work: `C:\Users\User\AppData\Roaming\Sublime Text 2\Packages\JsDebuggr\`
 
 
-Settings
---------
-JsDebuggr has only one settings for now. They can be found in the `JsDebuggr.sublime-settings` file.  
+Usage
+-----
+Simply add a breakpoint and then save the document. This will add the `debugger;` statements behind the scenes, so when your document is loaded in a js engine that supports it, it will break at that point. Note that you must save the document manually to make the breakpoints active (for now).
 
-* `file_type_list` is an array of file extensions that should be enabled for scanning and tracking. The default value is `["html", "htm", "js"]`.
-
-
-Key Bindings
-------------
 The default key bindings are as follows:
 
 * `ctrl + f10` - add or remove breakpoint
+* `ctrl + shift + f10` - disable or enable breakpoint
 
 Additionally, the right click menu allows for:
 
-* clear all
+* add/remove breakpoint
+* remove all
+* enable/disable breakpoint
+* enable all
+* disable all
+
+
+Settings
+--------
+JsDebuggr has only one settings for now. They can be found in the `JsDebuggr.sublime-settings` file. Note that this settings file is not being used at the moment as the settings are hard coded into the plugin for now.
+
+* `file_type_list` is an array of file extensions that should be enabled for scanning and tracking. The default value is `["html", "htm", "js"]`.
 
 
 Future Features
 -----
 This is a complete rewrite which is much cleaner but actually removed a number of features. These features should be showing up pretty soon:
 
-* enable / disable of breakpoints
 * conditional breakpoints
-* scan document for existing `debugger;` statements and convert them to breakpoints
+* scan document on load for existing `debugger;` statements and convert them to breakpoints
 * save and load of breakpoint sets

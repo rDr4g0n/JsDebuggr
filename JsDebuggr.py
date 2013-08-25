@@ -7,8 +7,10 @@ import re
 
 # TODO - put these vars into a config file
 BREAK_SCOPE = "keyword"
+BREAK_DISABLED_SCOPE = "comment"
 CONDITIONAL_SCOPE = "string"
 DEBUG_STATEMENT = "debugger; "
+FILE_TYPE_LIST = ["html", "htm", "js"]
 
 
 #collection containing a list of breakpoints and a number
@@ -86,6 +88,30 @@ class BreakpointList():
         for lineNum in lineNumList:
             self.remove(lineNum)
 
+    def enable(self, lineNum):
+        lineNumStr = str(lineNum)
+        breakpoint = self.breakpoints[lineNumStr]
+        breakpoint.enabled = True
+        #TODO - make this line region lookup simpler...
+        line = self.view.line(self.view.text_point(lineNum - 1, 0))
+        self.view.add_regions(breakpoint.id, [line], breakpoint.scope, "circle", sublime.HIDDEN | sublime.PERSISTENT)
+
+    def disable(self, lineNum):
+        lineNumStr = str(lineNum)
+        breakpoint = self.breakpoints[lineNumStr]
+        breakpoint.enabled = False
+        #TODO - make this line region lookup simpler...
+        line = self.view.line(self.view.text_point(lineNum - 1, 0))
+        self.view.add_regions(breakpoint.id, [line], BREAK_DISABLED_SCOPE, "circle", sublime.HIDDEN | sublime.PERSISTENT)
+
+    def disable_all(self):
+        for lineNum in self.breakpoints:
+            self.disable(int(lineNum))
+
+    def enable_all(self):
+        for lineNum in self.breakpoints:
+            self.enable(int(lineNum))
+
     #adjusts breakpoint line numbers due to insertions/removals
     #TODO - this should prolly be more... generic. or placed elsewhere?
     def shift(self, added, cursorLine):
@@ -149,6 +175,12 @@ class JsDebuggr(sublime_plugin.TextCommand):
 
         if(options and "removeAll" in options):
             breakpointList.remove_all()
+        elif(options and "toggleEnable" in options):
+            self.toggle_enable_break()
+        elif(options and "enableAll" in options):
+            breakpointList.enable_all()
+        elif(options and "disableAll" in options):
+            breakpointList.disable_all()
         else:
             self.toggle_break()
 
@@ -169,7 +201,6 @@ class JsDebuggr(sublime_plugin.TextCommand):
     def toggle_break(self):
         breakpointList = self.get_breakpointList(self.view)
 
-        #assuming we want to toggle breakpoint for now
         #TODO - deal with multiple selection
         lineNum = self.get_line_nums()[0]
 
@@ -182,6 +213,22 @@ class JsDebuggr(sublime_plugin.TextCommand):
             #else, create a new one
             breakpoint = breakpointList.add(lineNum)
 
+    def toggle_enable_break(self):
+        breakpointList = self.get_breakpointList(self.view)
+
+        lineNum = self.get_line_nums()[0]
+
+        breakpoint = breakpointList.get(lineNum)
+
+        if breakpoint.enabled:
+            #breakpoint is enabled, so disable it
+            print("disabling breakpoint")
+            breakpointList.disable(lineNum)
+        else:
+            #breakpoint is disabled, so enabled it
+            print("enabling breakpoint")
+            breakpointList.enable(lineNum)
+
 
 #write the debugger; statements to the document before save
 class WriteDebug(sublime_plugin.TextCommand):
@@ -190,8 +237,9 @@ class WriteDebug(sublime_plugin.TextCommand):
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, self.view)
         for id in breakpointList.breakpoints:
             breakpoint = breakpointList.breakpoints[id]
-            point = self.view.text_point(int(breakpoint.lineNum)-1, 0)
-            self.view.insert(edit, point, breakpoint.debugger)
+            if breakpoint.enabled:
+                point = self.view.text_point(int(breakpoint.lineNum)-1, 0)
+                self.view.insert(edit, point, breakpoint.debugger)
 
 
 #remove debugger; statements from the document after save
@@ -200,10 +248,11 @@ class ClearDebug(sublime_plugin.TextCommand):
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, self.view)
         for id in breakpointList.breakpoints:
             breakpoint = breakpointList.breakpoints[id]
-            line = self.view.line(self.view.text_point(breakpoint.lineNum-1, 0))
-            dedebugged = self.view.substr(line)
-            dedebugged = re.sub(r'%s' % re.escape(breakpoint.debugger), '', dedebugged)
-            self.view.replace(edit, line, dedebugged)
+            if breakpoint.enabled:
+                line = self.view.line(self.view.text_point(breakpoint.lineNum-1, 0))
+                dedebugged = self.view.substr(line)
+                dedebugged = re.sub(r'%s' % re.escape(breakpoint.debugger), '', dedebugged)
+                self.view.replace(edit, line, dedebugged)
 
 
 #listen for events and call necessary functions
@@ -251,9 +300,9 @@ class EventListener(sublime_plugin.EventListener):
         pass
 
     def on_load(self, view):
-        settings = sublime.load_settings("JsDebuggr.sublime-settings")
+        #settings = sublime.load_settings("JsDebuggr.sublime-settings")
 
-        file_type_list = settings.get("file_type_list")
+        file_type_list = FILE_TYPE_LIST
         print(file_type_list)
         extension = view.file_name().split(".")[-1]
         if not extension in file_type_list:
