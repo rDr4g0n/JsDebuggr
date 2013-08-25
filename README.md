@@ -54,5 +54,5 @@ Future Features
 This is a complete rewrite which is much cleaner but actually removed a number of features. These features should be showing up pretty soon:
 
 * conditional breakpoints
-* scan document on load for existing `debugger;` statements and convert them to breakpoints
 * save and load of breakpoint sets
+* many bugfixes and improvements
