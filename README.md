@@ -6,6 +6,8 @@ The way JsDebuggr works is by inserting the `debugger;` statement at each breakp
 
 Of course, the js engine executing the code needs to support the `debugger;` statement and debugging needs to be enabled (in Chrome, for instance, the developer console must be open).
 
+![ScreenShot](https://raw.github.com/rDr4g0n/JsDebuggr/master/screens2.gif)
+
 The benefits of a plugin to do this over entering debugger statements manually are minor, but all add up:
 * The `debugger;` statement is hidden from view so it won't annoy your linter
 * Adding the debugger statement is done in 2 clicks or with a keyboard shortcut rather than typing it out
