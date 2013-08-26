@@ -42,6 +42,7 @@ def should_track_view(view):
         else:
             track_view[viewId] = True
 
+    #print("JsDebuggr: should_track_view() returning %s" % track_view[viewId])
     return track_view[viewId]
 
 
@@ -305,7 +306,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
         #TODO - remove old debugger statement from document first?
         breakpoint.set_condition(text)
         #TODO - set_status probably doesn't belong here
-        self.view.set_status(breakpoint.id, "condition: %s" % breakpoint.condition)
+        self.view.set_status(breakpoint.id, "JsDebuggr Condition: `%s`" % breakpoint.condition)
 
 
 #write the debugger; statements to the document before save
@@ -395,7 +396,8 @@ class EventListener(sublime_plugin.EventListener):
         pass
 
     def on_load(self, view):
-        
+        if not should_track_view(view):
+            return
 
         viewId = str(view.id())
 
@@ -437,7 +439,7 @@ class EventListener(sublime_plugin.EventListener):
         cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
         breakpoint = breakpointList.get(cursorLine)
         if breakpoint and breakpoint.condition:
-            view.set_status(breakpoint.id, "condition: %s" % breakpoint.condition)
+            view.set_status(breakpoint.id, "JsDebuggr Condition: `%s`" % breakpoint.condition)
             self.setStatuses.append(breakpoint.id)
         else:
             #TODO - this whole setStatuses list seems kinda hacky...
