@@ -123,7 +123,7 @@ class BreakpointList():
         newBreakpoints = {}
         cursorRowCol = view.rowcol(view.sel()[0].a)
         cursorLine = cursorRowCol[0] + 1
-        cursorPos = cursorRowCol[1]
+        #cursorPos = cursorRowCol[1]
 
         #any breakpoint with a lineNum > cursorLine should be updated
         for lineNum in self.breakpoints:
@@ -315,6 +315,15 @@ class EventListener(sublime_plugin.EventListener):
             return
 
         viewId = str(view.id())
+
+        #if the number of lines hasn't been recorded, then on_load must
+        #not have been triggered, so trigger it
+        if not viewId in self.numLines:
+            print("on_load wasn't fired. firing it.")
+            self.on_load(view)
+            if not self.track:
+                return
+        
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
 
         #determine how many lines are in this view
@@ -325,7 +334,7 @@ class EventListener(sublime_plugin.EventListener):
             print("omg %i lines added!" % added)
             #use the cursor position to guess where the lines were inserted/removed
             #NOTE - this only supports single cursor operations
-            cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
+            #cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
             #TODO - shift method might need a refactor/rename
             breakpointList.shift(added, view)
 
@@ -353,7 +362,11 @@ class EventListener(sublime_plugin.EventListener):
         #settings = sublime.load_settings("JsDebuggr.sublime-settings")
 
         file_type_list = FILE_TYPE_LIST
-        extension = view.file_name().split(".")[-1]
+        file_name = view.file_name()
+        if not file_name:
+            #if this is an unnamed document, don't track
+            file_name = ""
+        extension = file_name.split(".")[-1]
         if not extension in file_type_list:
             print("Not tracking document because it is not of the correct type.")
             self.track = False
@@ -394,6 +407,9 @@ class EventListener(sublime_plugin.EventListener):
             view.run_command("clear_debug")
 
     def on_selection_modified(self, view):
+        if not self.track:
+            return
+
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
         cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
         breakpoint = breakpointList.get(cursorLine)
