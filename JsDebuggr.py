@@ -22,11 +22,11 @@ track_view = {}
 
 
 #TODO - is it ok to leave this guy global like this? seems bad...
-def should_track_view(view):
+def should_track_view(view, force=False):
     viewId = str(view.id())
     #determine if this viewId should be tracked by plugin
     #if this determination hasn't been made before, figure it out
-    if not viewId in track_view:
+    if not viewId in track_view or force:
         #TODO - use settings instead of hardcoded constants
         #settings = sublime.load_settings("JsDebuggr.sublime-settings")
 
@@ -396,15 +396,17 @@ class EventListener(sublime_plugin.EventListener):
         #insert debugger; statments
         print("JsDebuggr: inserting debuggers")
         view.run_command("write_debug")
-        pass
 
     def on_post_save(self, view):
         if not should_track_view(view):
+            #the filename may have changed, so this view may need
+            #to be tracked
+            if should_track_view(view, True):
+                self.on_load(view)
             return
 
         print("JsDebuggr: clearing debuggers")
         view.run_command("clear_debug")
-        pass
 
     def on_load(self, view):
         if not should_track_view(view):
