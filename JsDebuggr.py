@@ -151,45 +151,22 @@ class BreakpointList():
     #TODO - this should prolly be more... generic. or placed elsewhere?
     def shift(self, added):
         newBreakpoints = {}
-        cursorRowCol = self.view.rowcol(self.view.sel()[0].a)
-        cursorLine = cursorRowCol[0] + 1
-        #cursorPos = cursorRowCol[1]
 
         #any breakpoint with a lineNum > cursorLine should be updated
         for lineNum in self.breakpoints:
             breakpoint = self.breakpoints[lineNum]
-            lineNumInt = int(lineNum)
-            newLineNumInt = lineNumInt + added
-            newLineNumStr = str(newLineNumInt)
 
-            print([lineNumInt, cursorLine])
-            #if lines were removed and this breakpoint is within
-            #the removal, it should be removed from the list
-            #TODO - if cursor is at position 0 on the line, don't
-            #       trigger breakpoint delete
-            if (
-                added < 0 and lineNumInt > cursorLine and
-                lineNumInt <= cursorLine - added
-            ):
-                print("JsDebuggr: removing breakpoint at line %s - line has been deleted" % lineNum)
-                #the breakpoint is effectively removed by not being
-                #copied into the new list during this shift process
-                self.clear_gutter_icon(breakpoint.id)
-            #if this breakpoint is beyond the cursor, it needs to shift
-            #TODO - if lineNumInt == cursorLine-1 and cursorPos isn't 0
-            #       don't shift
-            elif (
-                added > 0 and lineNumInt >= cursorLine-1 or
-                added < 0 and lineNumInt > cursorLine
-            ):
-                newBreakpoints[newLineNumStr] = breakpoint
-                newBreakpoints[newLineNumStr].lineNum = newLineNumInt
-                print("JsDebuggr: moving %i to %i" % (lineNumInt, newLineNumInt))
-                print("JsDebuggr: lineNum is %s" % newBreakpoints[newLineNumStr].lineNum)
-                self.draw_gutter_icon(breakpoint)
-            #otherwise, leave it where it is
+            #get the region that the marker is on
+            region = self.view.get_regions(breakpoint.id)
+            if region:
+                #get the line number of that region
+                regionLineNum = self.view.rowcol(region[0].a)[0] + 1
+                print("JsDebuggr: shifting %s to %i" % (lineNum, regionLineNum))
+                #switch this breakpoint to that line number
+                breakpoint.lineNum = regionLineNum
+                newBreakpoints[str(regionLineNum)] = breakpoint
             else:
-                newBreakpoints[lineNum] = breakpoint
+                print("JsDebuggr: removing %s" % lineNum)
 
         #update the global breakpoint list with the new one
         self.breakpoints = newBreakpoints
