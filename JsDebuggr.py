@@ -1,4 +1,4 @@
-# JsDebuggr v.5
+# JsDebuggr 0.5.5
 
 import sublime
 import sublime_plugin
@@ -99,16 +99,14 @@ class BreakpointList():
         #register breakpoint
         self.breakpoints[lineNumStr] = breakpoint
 
-        #TODO - make this line region lookup simpler...
-        line = self.view.line(self.view.text_point(lineNum - 1, 0))
-        self.view.add_regions(breakpoint.id, [line], breakpoint.scope, "circle", sublime.HIDDEN | sublime.PERSISTENT)
+        self.draw_gutter_icon(breakpoint)
 
         return breakpoint
 
     def remove(self, lineNum):
         lineNumStr = str(lineNum)
         print("JsDebuggr: removing breakpoint for line %s" % lineNumStr)
-        self.view.erase_regions(self.breakpoints[lineNumStr].id)
+        self.clear_gutter_icon(self.breakpoints[lineNumStr].id)
         #remove from breakpoints registry
         del self.breakpoints[lineNumStr]
 
@@ -126,17 +124,13 @@ class BreakpointList():
         lineNumStr = str(lineNum)
         breakpoint = self.breakpoints[lineNumStr]
         breakpoint.enabled = True
-        #TODO - make this line region lookup simpler...
-        line = self.view.line(self.view.text_point(lineNum - 1, 0))
-        self.view.add_regions(breakpoint.id, [line], breakpoint.scope, "circle", sublime.HIDDEN | sublime.PERSISTENT)
+        self.draw_gutter_icon(breakpoint)
 
     def disable(self, lineNum):
         lineNumStr = str(lineNum)
         breakpoint = self.breakpoints[lineNumStr]
         breakpoint.enabled = False
-        #TODO - make this line region lookup simpler...
-        line = self.view.line(self.view.text_point(lineNum - 1, 0))
-        self.view.add_regions(breakpoint.id, [line], BREAK_DISABLED_SCOPE, "circle", sublime.HIDDEN | sublime.PERSISTENT)
+        self.draw_gutter_icon(breakpoint)
 
     def disable_all(self):
         for lineNum in self.breakpoints:
@@ -148,14 +142,15 @@ class BreakpointList():
 
     #adjusts breakpoint line numbers due to insertions/removals
     #TODO - this should prolly be more... generic. or placed elsewhere?
-    def shift(self, added, view):
+    def shift(self, added):
         newBreakpoints = {}
-        cursorRowCol = view.rowcol(view.sel()[0].a)
+        cursorRowCol = self.view.rowcol(self.view.sel()[0].a)
         cursorLine = cursorRowCol[0] + 1
         #cursorPos = cursorRowCol[1]
 
         #any breakpoint with a lineNum > cursorLine should be updated
         for lineNum in self.breakpoints:
+            breakpoint = self.breakpoints[lineNum]
             lineNumInt = int(lineNum)
             newLineNumInt = lineNumInt + added
             newLineNumStr = str(newLineNumInt)
@@ -170,7 +165,9 @@ class BreakpointList():
                 lineNumInt <= cursorLine - added
             ):
                 print("JsDebuggr: removing breakpoint at line %s - line has been deleted" % lineNum)
-                self.view.erase_regions(self.breakpoints[lineNum].id)
+                #the breakpoint is effectively removed by not being
+                #copied into the new list during this shift process
+                self.clear_gutter_icon(breakpoint.id)
             #if this breakpoint is beyond the cursor, it needs to shift
             #TODO - if lineNumInt == cursorLine-1 and cursorPos isn't 0
             #       don't shift
@@ -178,17 +175,24 @@ class BreakpointList():
                 added > 0 and lineNumInt >= cursorLine-1 or
                 added < 0 and lineNumInt > cursorLine
             ):
-                newBreakpoints[newLineNumStr] = self.breakpoints[lineNum]
+                newBreakpoints[newLineNumStr] = breakpoint
                 newBreakpoints[newLineNumStr].lineNum = newLineNumInt
                 print("JsDebuggr: moving %i to %i" % (lineNumInt, newLineNumInt))
                 print("JsDebuggr: lineNum is %s" % newBreakpoints[newLineNumStr].lineNum)
+                self.draw_gutter_icon(breakpoint)
             #otherwise, leave it where it is
             else:
-                newBreakpoints[lineNum] = self.breakpoints[lineNum]
+                newBreakpoints[lineNum] = breakpoint
 
         #update the global breakpoint list with the new one
-        #TODO - redraw all breakpoint icons?
         self.breakpoints = newBreakpoints
+
+    def draw_gutter_icon(self, breakpoint):
+        line = self.view.line(self.view.text_point(breakpoint.lineNum - 1, 0))
+        self.view.add_regions(breakpoint.id, [line], breakpoint.scope, "circle", sublime.HIDDEN | sublime.PERSISTENT)
+
+    def clear_gutter_icon(self, id):
+        self.view.erase_regions(id)
 
 
 #model containing information about each breakpoint
@@ -360,7 +364,7 @@ class EventListener(sublime_plugin.EventListener):
             self.on_load(view)
             if not should_track_view(view):
                 return
-        
+
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
 
         #determine how many lines are in this view
@@ -373,7 +377,7 @@ class EventListener(sublime_plugin.EventListener):
             #NOTE - this only supports single cursor operations
             #cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
             #TODO - shift method might need a refactor/rename
-            breakpointList.shift(added, view)
+            breakpointList.shift(added)
 
             #update new number of lines
             self.numLines[viewId] = currNumLines

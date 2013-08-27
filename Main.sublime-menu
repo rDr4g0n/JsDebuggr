@@ -43,7 +43,12 @@
                                 },
                                 "caption": "Key Bindings – User"
                             },
-                            { "caption": "-" }
+                            { "caption": "-" },
+                            {
+                                "command": "open_file",
+                                "args": {"file": "${packages}/JsDebuggr/README.md"},
+                                "caption": "README"
+                            }
                         ]
                     }
                 ]
