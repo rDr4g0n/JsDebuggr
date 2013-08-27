@@ -17,8 +17,10 @@ CONDITIONAL_BEGIN_MARKER = "/*JsDbg-Begin*/"
 CONDITIONAL_END_MARKER = "/*JsDbg-End*/"
 
 #dict which stores a bool indicating if a view shoul
-#be tracked by JsDebuggr. the view id is the dict key 
+#be tracked by JsDebuggr. the view id is the dict key
 track_view = {}
+
+
 #TODO - is it ok to leave this guy global like this? seems bad...
 def should_track_view(view):
     viewId = str(view.id())
@@ -84,15 +86,15 @@ class BreakpointList():
 
         #setup breakpoint
         debugger = DEBUG_STATEMENT
-        scope = BREAK_SCOPE
 
-        #TODO - conditional break
+        #if there is already a breakpoint for this line, remove it
+        if lineNumStr in self.breakpoints:
+            self.remove(lineNum)
 
         print("JsDebuggr: creating new breakpoint for line %i" % lineNum)
         breakpoint = Breakpoint(**{
             "lineNum": lineNum,
             "enabled": True,
-            "scope": scope,
             "debugger": debugger,
             "condition": condition
         })
@@ -124,12 +126,17 @@ class BreakpointList():
         lineNumStr = str(lineNum)
         breakpoint = self.breakpoints[lineNumStr]
         breakpoint.enabled = True
+        if breakpoint.condition:
+            breakpoint.scope = CONDITIONAL_SCOPE
+        else:
+            breakpoint.scope = BREAK_SCOPE
         self.draw_gutter_icon(breakpoint)
 
     def disable(self, lineNum):
         lineNumStr = str(lineNum)
         breakpoint = self.breakpoints[lineNumStr]
         breakpoint.enabled = False
+        breakpoint.scope = BREAK_DISABLED_SCOPE
         self.draw_gutter_icon(breakpoint)
 
     def disable_all(self):
