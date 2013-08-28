@@ -1,16 +1,17 @@
-# JsDebuggr 0.5.7
+# JsDebuggr 0.5.8
 
 import sublime
 import sublime_plugin
 import uuid
 import re
 
-# TODO - put these vars into a config file
-BREAK_SCOPE = "keyword"
-BREAK_DISABLED_SCOPE = "comment"
-CONDITIONAL_SCOPE = "string"
-FILE_TYPE_LIST = ["html", "htm", "js"]
-AUTOSCAN_ON_LOAD = True
+settings = sublime.load_settings("JsDebuggr.sublime-settings")
+BREAK_SCOPE = settings.get("breakpoint_color")
+BREAK_DISABLED_SCOPE = settings.get("disabled_breakpoint_color")
+CONDITIONAL_SCOPE = settings.get("conditional_breakpoint_color")
+FILE_TYPE_LIST = settings.get("file_type_list")
+AUTOSCAN_ON_LOAD = settings.get("autoscan_on_load")
+VERBOSE = settings.get("verbose")
 
 DEBUG_STATEMENT = "/*JsDbg*/debugger;"
 CONDITIONAL_BEGIN_MARKER = "/*JsDbg-Begin*/"
@@ -37,15 +38,20 @@ def should_track_view(view, force=False):
             file_name = ""
         extension = file_name.split(".")[-1]
         if not extension in file_type_list:
-            print("JsDebuggr: Not tracking document because it is not of the correct type.")
+            printl("JsDebuggr: Not tracking document because it is not of the correct type.")
             track_view[viewId] = False
             #TODO - remove event listeners?
             #TODO - disable context menu?
         else:
             track_view[viewId] = True
 
-    #print("JsDebuggr: should_track_view() returning %s" % track_view[viewId])
+    #printl("JsDebuggr: should_track_view() returning %s" % track_view[viewId])
     return track_view[viewId]
+
+
+def printl(str):
+    if VERBOSE:
+        print(str)
 
 
 #collection containing a list of breakpoints and a number
@@ -91,7 +97,7 @@ class BreakpointList():
         if lineNumStr in self.breakpoints:
             self.remove(lineNum)
 
-        print("JsDebuggr: creating new breakpoint for line %i" % lineNum)
+        printl("JsDebuggr: creating new breakpoint for line %i" % lineNum)
         breakpoint = Breakpoint(**{
             "lineNum": lineNum,
             "enabled": True,
@@ -107,7 +113,7 @@ class BreakpointList():
 
     def remove(self, lineNum):
         lineNumStr = str(lineNum)
-        print("JsDebuggr: removing breakpoint for line %s" % lineNumStr)
+        printl("JsDebuggr: removing breakpoint for line %s" % lineNumStr)
         self.clear_gutter_icon(self.breakpoints[lineNumStr].id)
         #remove from breakpoints registry
         del self.breakpoints[lineNumStr]
@@ -161,12 +167,12 @@ class BreakpointList():
             if region:
                 #get the line number of that region
                 regionLineNum = self.view.rowcol(region[0].a)[0] + 1
-                print("JsDebuggr: shifting %s to %i" % (lineNum, regionLineNum))
+                printl("JsDebuggr: shifting %s to %i" % (lineNum, regionLineNum))
                 #switch this breakpoint to that line number
                 breakpoint.lineNum = regionLineNum
                 newBreakpoints[str(regionLineNum)] = breakpoint
             else:
-                print("JsDebuggr: removing %s" % lineNum)
+                printl("JsDebuggr: removing %s" % lineNum)
 
         #update the global breakpoint list with the new one
         self.breakpoints = newBreakpoints
@@ -198,7 +204,7 @@ class Breakpoint():
         self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
         #HACK - setting CONDITIONAL_SCOPE here is all hacksy
         self.scope = CONDITIONAL_SCOPE
-        print("JsDebuggr: conditional break: %s" % self.debugger)
+        printl("JsDebuggr: conditional break: %s" % self.debugger)
 
 
 # handle text commands from user
@@ -214,7 +220,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
 
     def run(self, edit, **options):
         if not should_track_view(self.view):
-            print("JsDebuggr: ignoring request as this view isn't being tracked")
+            printl("JsDebuggr: ignoring request as this view isn't being tracked")
             return
 
         breakpointList = self.get_breakpointList(self.view)
@@ -243,7 +249,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
     def get_breakpointList(self, view):
         viewId = str(view.id())
         if not viewId in self.breakpointLists:
-            print("JsDebuggr: creating new BreakpointList")
+            printl("JsDebuggr: creating new BreakpointList")
             self.breakpointLists[viewId] = BreakpointList(view)
 
         return self.breakpointLists[viewId]
@@ -270,11 +276,11 @@ class JsDebuggr(sublime_plugin.TextCommand):
 
         if breakpoint.enabled:
             #breakpoint is enabled, so disable it
-            print("JsDebuggr: disabling breakpoint")
+            printl("JsDebuggr: disabling breakpoint")
             breakpointList.disable(lineNum)
         else:
             #breakpoint is disabled, so enabled it
-            print("JsDebuggr: enabling breakpoint")
+            printl("JsDebuggr: enabling breakpoint")
             breakpointList.enable(lineNum)
 
     def add_conditional_input(self):
@@ -293,7 +299,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
             self.view.window().show_input_panel("Enter Condition:", breakpoint.condition, self.edit_conditional, None, None)
 
     def edit_conditional(self, text):
-        print(text)
+        printl(text)
         breakpointList = self.get_breakpointList(self.view)
         lineNum = self.get_line_nums()[0]
         breakpoint = breakpointList.get(lineNum)
@@ -349,13 +355,13 @@ class EventListener(sublime_plugin.EventListener):
 
         #fix for https://github.com/rDr4g0n/JsDebuggr/issues/10
         if view.is_scratch():
-            print("JsDebuggr: view is marked as scratch. setting scratch to false.")
+            printl("JsDebuggr: view is marked as scratch. setting scratch to false.")
             view.set_scratch(False)
 
         #if the number of lines hasn't been recorded, then on_load must
         #not have been triggered, so trigger it
         if not viewId in self.numLines:
-            print("JsDebuggr: on_load wasn't fired. firing it.")
+            printl("JsDebuggr: on_load wasn't fired. firing it.")
             self.on_load(view)
             if not should_track_view(view):
                 return
@@ -367,7 +373,7 @@ class EventListener(sublime_plugin.EventListener):
         # if it doesnt match numLines, evaluate where the lines were inserted/removed
         if currNumLines != self.numLines[viewId]:
             added = currNumLines - self.numLines[viewId]
-            print("JsDebuggr: omg %i lines added!" % added)
+            printl("JsDebuggr: omg %i lines added!" % added)
             #use the cursor position to guess where the lines were inserted/removed
             #NOTE - this only supports single cursor operations
             #cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
@@ -382,7 +388,7 @@ class EventListener(sublime_plugin.EventListener):
             return
 
         #insert debugger; statments
-        print("JsDebuggr: inserting debuggers")
+        printl("JsDebuggr: inserting debuggers")
         view.run_command("write_debug")
 
     def on_post_save(self, view):
@@ -393,10 +399,10 @@ class EventListener(sublime_plugin.EventListener):
                 self.on_load(view)
             return
 
-        print("JsDebuggr: clearing debuggers")
+        printl("JsDebuggr: clearing debuggers")
         view.run_command("clear_debug")
         #fix for https://github.com/rDr4g0n/JsDebuggr/issues/10
-        print("JsDebuggr: marking view as scratch")
+        printl("JsDebuggr: marking view as scratch")
         view.set_scratch(True)
 
     def on_load(self, view):
@@ -408,7 +414,7 @@ class EventListener(sublime_plugin.EventListener):
         #if the number of lines has not been recorded, record it
         if not viewId in self.numLines:
             self.numLines[viewId] = view.rowcol(view.size())[0] + 1
-            print("JsDebuggr: setting numlines to %i" % self.numLines[viewId])
+            printl("JsDebuggr: setting numlines to %i" % self.numLines[viewId])
         #force create breakpoint list
 
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
@@ -417,7 +423,7 @@ class EventListener(sublime_plugin.EventListener):
             #scan the doc for debugger; statements. if found, make em into
             #breakpoints and remove the statement
             existingDebuggers = view.find_all(r'%s' % re.escape(DEBUG_STATEMENT))
-            print("JsDebuggr: found %i existing debugger statements" % len(existingDebuggers))
+            printl("JsDebuggr: found %i existing debugger statements" % len(existingDebuggers))
             for region in existingDebuggers:
                 condition = None
                 #TODO - this whole conditional check is very ugly and hacky. there
@@ -428,7 +434,7 @@ class EventListener(sublime_plugin.EventListener):
                     #this is a conditional break, so get the condition
                     conditionalEnd = re.search(r'%s' % re.escape(CONDITIONAL_END_MARKER), lineText)
                     condition = lineText[conditionalBegin.end(0): conditionalEnd.start(0)]
-                    print("JsDebuggr: existing debugger is a conditional: '%s'" % condition)
+                    printl("JsDebuggr: existing debugger is a conditional: '%s'" % condition)
 
                 breakpointList.add(view.rowcol(region.a)[0] + 1, condition)
 

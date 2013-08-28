@@ -5,5 +5,14 @@
 	// Bool indicating if JsDebuggr should scan the document on load and create
 	// breakpoints for existing debugger; statements. Note that this will only
 	// scan for debugger's placed by JsDebuggr.
-	"autoscan_on_load": true
+	"autoscan_on_load": true,
+
+	// colors to use for gutter icons are dictated by the color scheme that is
+	// selected for this language. any valid scope will work here
+	"breakpoint_color": "keyword",
+	"conditional_breakpoint_color": "string",
+	"disabled_breakpoint_color": "comment",
+
+	// for debugging the plugin.
+	"verbose": true
 }
