@@ -341,6 +341,11 @@ class EventListener(sublime_plugin.EventListener):
 
         viewId = str(view.id())
 
+        #fix for https://github.com/rDr4g0n/JsDebuggr/issues/10
+        if view.is_scratch():
+            print("JsDebuggr: view is marked as scratch. setting scratch to false.")
+            view.set_scratch(False)
+
         #if the number of lines hasn't been recorded, then on_load must
         #not have been triggered, so trigger it
         if not viewId in self.numLines:
@@ -384,6 +389,9 @@ class EventListener(sublime_plugin.EventListener):
 
         print("JsDebuggr: clearing debuggers")
         view.run_command("clear_debug")
+        #fix for https://github.com/rDr4g0n/JsDebuggr/issues/10
+        print("JsDebuggr: marking view as scratch")
+        view.set_scratch(True)
 
     def on_load(self, view):
         if not should_track_view(view):
