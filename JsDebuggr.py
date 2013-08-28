@@ -1,4 +1,4 @@
-# JsDebuggr 0.5.5
+# JsDebuggr 0.5.7
 
 import sublime
 import sublime_plugin
@@ -205,6 +205,12 @@ class Breakpoint():
 class JsDebuggr(sublime_plugin.TextCommand):
 
     breakpointLists = {}
+
+    #TODO - split JsDebuggr into separate commands and
+    #       use is_visible() to hide them as the context
+    #       dicatates
+    def is_visible(self):
+        return True
 
     def run(self, edit, **options):
         if not should_track_view(self.view):
@@ -436,6 +442,9 @@ class EventListener(sublime_plugin.EventListener):
         breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
         cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
         breakpoint = breakpointList.get(cursorLine)
+
+        #TODO - if this is a breakpoint, take note so that is_visible() can
+        #       determine which context menu items to show
         if breakpoint and breakpoint.condition:
             view.set_status(breakpoint.id, "JsDebuggr Condition: `%s`" % breakpoint.condition)
             self.setStatuses.append(breakpoint.id)
