@@ -49,7 +49,7 @@ Settings
 JsDebuggr has only a handful of settings for now. They can be found in the `JsDebuggr.sublime-settings` file.
 
 * `file_type_list` is an array of file extensions that should be enabled for scanning and tracking. The default value is `["html", "htm", "js"]`.
-* `autoscan_on_load` is a bool that indicates if a newly loaded doc should be for existing debugger keywords, and those keywords be transformed into breakpoints
+* `autoscan_on_load` is a bool that indicates if a newly loaded doc should be scanned for existing debugger keywords, and those keywords be transformed into breakpoints
 * `breakpoint_color`, `conditional_breakpoint_color`, and `disabled_breakpoint_color` determine the color of the gutter icon for breakpoints of various types.
 * `verbose` right now JsDebuggr dumps a lot into the console for troubleshooting. Setting this to false will prevent that behavior. Once it is in a better state, this will default to false.
 
