@@ -56,7 +56,7 @@ JsDebuggr has only a handful of settings for now. They can be found in the `JsDe
 
 Future Features
 -----
+* disable context menu options when they are not valid (for instance, "Edit Conditional Breakpoint" should only be visible when a conditional breakpoint is selected).
 * save and load of multiple breakpoint sets
 * persist disabled breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
-* disable context menu options when they are not valid
 * multiple selection support
