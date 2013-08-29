@@ -78,6 +78,32 @@ def printl(str):
         print(str)
 
 
+#TODO - feels like global like this is bad design
+#big ol global list of all the breakpointLists, indexed by view.id()
+breakpointLists = {}
+
+
+#either returns an existing breakpoint list for the current view
+#or creates a new one
+def get_breakpointList(view):
+    viewId = str(view.id())
+    if not viewId in breakpointLists:
+        printl("JsDebuggr: creating new BreakpointList")
+        breakpointLists[viewId] = BreakpointList(view)
+
+    return breakpointLists[viewId]
+
+
+#gets the line numbers that current cursors are on. right now
+#i am just interested in the first one, but in the future i might
+#use the others to do multiple selections
+def get_line_nums(view):
+    lineNums = []
+    for s in view.sel():
+        lineNums.append(view.rowcol(s.a)[0] + 1)
+    return lineNums
+
+
 #collection containing a list of breakpoints and a number
 #of functions for retrieving, removing, sorting, and also
 #handles drawing the breakpoint circle in the gutter
@@ -255,8 +281,6 @@ class Breakpoint():
 #   i can use is_visible() to turn them on and off
 class JsDebuggr(sublime_plugin.TextCommand):
 
-    breakpointLists = {}
-
     def is_visible(self):
         return True
 
@@ -265,7 +289,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
             printl("JsDebuggr: ignoring request as this view isn't being tracked")
             return
 
-        breakpointList = self.get_breakpointList(self.view)
+        breakpointList = get_breakpointList(self.view)
 
         if(options and "removeAll" in options):
             breakpointList.remove_all()
@@ -280,35 +304,16 @@ class JsDebuggr(sublime_plugin.TextCommand):
         elif(options and "editConditional" in options):
             self.edit_conditional_input()
         else:
-            self.toggle_break()
-
-    #gets the line numbers that current cursors are on. right now
-    #i am just interested in the first one, but in the future i might
-    #use the others to do multiple selections
-    def get_line_nums(self):
-        lineNums = []
-        for s in self.view.sel():
-            lineNums.append(self.view.rowcol(s.a)[0] + 1)
-        return lineNums
-
-    #either returns an existing breakpoint list for the current view
-    #or creates a new one
-    def get_breakpointList(self, view):
-        viewId = str(view.id())
-        if not viewId in self.breakpointLists:
-            printl("JsDebuggr: creating new BreakpointList")
-            self.breakpointLists[viewId] = BreakpointList(view)
-
-        return self.breakpointLists[viewId]
+            self.toggle_break() 
 
     #determines which line is currently selected and checks if
     #a breakpoint is on that line. then decides to remove it, or
     #create a new breakpoint.
     def toggle_break(self):
-        breakpointList = self.get_breakpointList(self.view)
+        breakpointList = get_breakpointList(self.view)
 
         #TODO - deal with multiple selection
-        lineNum = self.get_line_nums()[0]
+        lineNum = get_line_nums(self.view)[0]
 
         breakpoint = breakpointList.get(lineNum)
 
@@ -323,8 +328,8 @@ class JsDebuggr(sublime_plugin.TextCommand):
     #a breakpoint is on that line. then decides to enable or
     #disable it.
     def toggle_enable_break(self):
-        breakpointList = self.get_breakpointList(self.view)
-        lineNum = self.get_line_nums()[0]
+        breakpointList = get_breakpointList(self.view)
+        lineNum = get_line_nums(self.view)[0]
         breakpoint = breakpointList.get(lineNum)
 
         if breakpoint.enabled:
@@ -344,16 +349,16 @@ class JsDebuggr(sublime_plugin.TextCommand):
     #creates a new breakpoint, setting the conditional property
     #from the user supplied text.
     def add_conditional(self, text):
-        breakpointList = self.get_breakpointList(self.view)
-        lineNum = self.get_line_nums()[0]
+        breakpointList = get_breakpointList(self.view)
+        lineNum = get_line_nums(self.view)[0]
         breakpointList.add(lineNum, text)
 
     #looks up the existing breakpoints conditional property
     #and brings up an input panel prepopulated with the current
     #condition for editing.
     def edit_conditional_input(self):
-        breakpointList = self.get_breakpointList(self.view)
-        lineNum = self.get_line_nums()[0]
+        breakpointList = get_breakpointList(self.view)
+        lineNum = get_line_nums(self.view)[0]
         breakpoint = breakpointList.get(lineNum)
         if breakpoint.condition:
             self.view.window().show_input_panel("Enter Condition:", breakpoint.condition, self.edit_conditional, None, None)
@@ -361,8 +366,8 @@ class JsDebuggr(sublime_plugin.TextCommand):
     #updates the existing conditional breakpoint with new condition
     def edit_conditional(self, text):
         printl(text)
-        breakpointList = self.get_breakpointList(self.view)
-        lineNum = self.get_line_nums()[0]
+        breakpointList = get_breakpointList(self.view)
+        lineNum = get_line_nums(self.view)[0]
         breakpoint = breakpointList.get(lineNum)
         breakpoint.set_condition(text)
         #TODO - set_status probably doesn't belong here
@@ -373,7 +378,7 @@ class JsDebuggr(sublime_plugin.TextCommand):
 class WriteDebug(sublime_plugin.TextCommand):
     def run(self, edit):
         #iterate breakpoints and write debugger; statments
-        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, self.view)
+        breakpointList = get_breakpointList(self.view)
         for id in breakpointList.breakpoints:
             breakpoint = breakpointList.breakpoints[id]
             if breakpoint.enabled:
@@ -386,7 +391,7 @@ class WriteDebug(sublime_plugin.TextCommand):
 #remove debugger; statements from the document after save
 class ClearDebug(sublime_plugin.TextCommand):
     def run(self, edit):
-        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, self.view)
+        breakpointList = get_breakpointList(self.view)
         for id in breakpointList.breakpoints:
             breakpoint = breakpointList.breakpoints[id]
             if breakpoint.enabled:
@@ -426,7 +431,7 @@ class EventListener(sublime_plugin.EventListener):
             if not should_track_view(view):
                 return
 
-        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
+        breakpointList = get_breakpointList(view)
 
         #determine how many lines are in this view
         currNumLines = view.rowcol(view.size())[0] + 1
@@ -438,7 +443,7 @@ class EventListener(sublime_plugin.EventListener):
             #NOTE - this only supports single cursor operations
             #cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
             #TODO - shift method might need a refactor/rename
-            breakpointList.shift(added)
+            breakpointList.shift()
 
             #update new number of lines
             self.numLines[viewId] = currNumLines
@@ -477,7 +482,7 @@ class EventListener(sublime_plugin.EventListener):
             printl("JsDebuggr: setting numlines to %i" % self.numLines[viewId])
         #force create breakpoint list
 
-        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
+        breakpointList = get_breakpointList(view)
 
         if AUTOSCAN_ON_LOAD:
             #scan the doc for debugger; statements. if found, make em into
@@ -507,7 +512,7 @@ class EventListener(sublime_plugin.EventListener):
         if not should_track_view(view):
             return
 
-        breakpointList = JsDebuggr.get_breakpointList(JsDebuggr, view)
+        breakpointList = get_breakpointList(view)
         cursorLine = view.rowcol(view.sel()[0].a)[0] + 1
         breakpoint = breakpointList.get(cursorLine)
 
