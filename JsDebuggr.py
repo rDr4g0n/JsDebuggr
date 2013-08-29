@@ -5,24 +5,47 @@ import sublime_plugin
 import uuid
 import re
 
+#settings, duh
 settings = sublime.load_settings("JsDebuggr.sublime-settings")
+
+#colors for the breakpoint gutter markers
 BREAK_SCOPE = settings.get("breakpoint_color")
 BREAK_DISABLED_SCOPE = settings.get("disabled_breakpoint_color")
 CONDITIONAL_SCOPE = settings.get("conditional_breakpoint_color")
+
+#file extensions to track breakpoints in. default is js, html, and htm
+#TODO - isntead, use sublime's scopes to determine if this is a javascript context
 FILE_TYPE_LIST = settings.get("file_type_list")
+
+#if set to true, and existing JsDbg debugger; statements will be
+#converted to breakpoints automatically. if false, they will be left
+#in tact
 AUTOSCAN_ON_LOAD = settings.get("autoscan_on_load")
+
+#used with printl() function which is just a proxy for print() except
+#it checks if VERBOSE is true. turn this off to turn off console debugging
 VERBOSE = settings.get("verbose")
 
+#the debugger; statement to be inserted at each breakpoint. the 
+#/*JsDbg*/ thing is to give JsDebuggr a unique string to search
+#for when adding and removing breakpoints
 DEBUG_STATEMENT = "/*JsDbg*/debugger;"
+#beginning and end marker for the conditional part of a conditional
+#breakpoint. this is kinda obtuse and hacky...
 CONDITIONAL_BEGIN_MARKER = "/*JsDbg-Begin*/"
 CONDITIONAL_END_MARKER = "/*JsDbg-End*/"
 
-#dict which stores a bool indicating if a view shoul
+#dict which stores a bool indicating if a view should
 #be tracked by JsDebuggr. the view id is the dict key
+#this dict is populated by should_track_view()
+#TODO - can probably use is_enabled() to replace this
 track_view = {}
 
 
+#determines if a view should track breakpoints and stuff.
 #TODO - is it ok to leave this guy global like this? seems bad...
+#TODO - can probably use is_enabled() instead of this (or at least
+#   trim it down a bit)
 def should_track_view(view, force=False):
     viewId = str(view.id())
     #determine if this viewId should be tracked by plugin
@@ -49,6 +72,7 @@ def should_track_view(view, force=False):
     return track_view[viewId]
 
 
+#easy way to turn console logging on and off
 def printl(str):
     if VERBOSE:
         print(str)
@@ -106,7 +130,7 @@ class BreakpointList():
         })
         #register breakpoint
         self.breakpoints[lineNumStr] = breakpoint
-
+        #draw the icon
         self.draw_gutter_icon(breakpoint)
 
         return breakpoint
@@ -114,6 +138,7 @@ class BreakpointList():
     def remove(self, lineNum):
         lineNumStr = str(lineNum)
         printl("JsDebuggr: removing breakpoint for line %s" % lineNumStr)
+        #clear the icon
         self.clear_gutter_icon(self.breakpoints[lineNumStr].id)
         #remove from breakpoints registry
         del self.breakpoints[lineNumStr]
@@ -153,12 +178,11 @@ class BreakpointList():
         for lineNum in self.breakpoints:
             self.enable(int(lineNum))
 
-    #adjusts breakpoint line numbers due to insertions/removals
-    #TODO - this should prolly be more... generic. or placed elsewhere?
-    def shift(self, added):
+    #looks up breakpoints by id and updates their lineNum in
+    #the breakpoint list.
+    def shift(self):
         newBreakpoints = {}
 
-        #any breakpoint with a lineNum > cursorLine should be updated
         for lineNum in self.breakpoints:
             breakpoint = self.breakpoints[lineNum]
 
@@ -167,10 +191,19 @@ class BreakpointList():
             if region:
                 #get the line number of that region
                 regionLineNum = self.view.rowcol(region[0].a)[0] + 1
+                regionLineNumStr = str(regionLineNum)
+
+                if regionLineNumStr in newBreakpoints:
+                    #more than one breakpoint was shifted to this line
+                    #so clear the previous one before merging. fixes for bug
+                    #https://github.com/rDr4g0n/JsDebuggr/issues/13
+                    printl("JsDebuggr: multiple breakpoints merged")
+                    self.clear_gutter_icon(newBreakpoints[regionLineNumStr].id)
+
                 printl("JsDebuggr: shifting %s to %i" % (lineNum, regionLineNum))
                 #switch this breakpoint to that line number
                 breakpoint.lineNum = regionLineNum
-                newBreakpoints[str(regionLineNum)] = breakpoint
+                newBreakpoints[regionLineNumStr] = breakpoint
             else:
                 printl("JsDebuggr: removing %s" % lineNum)
 
@@ -187,18 +220,28 @@ class BreakpointList():
 
 #model containing information about each breakpoint
 class Breakpoint():
-    def __init__(self, lineNum=0, lineText="", enabled=True, scope=BREAK_SCOPE, debugger=DEBUG_STATEMENT, condition=False):
+    def __init__(self, lineNum=0, enabled=True, scope=BREAK_SCOPE, debugger=DEBUG_STATEMENT, condition=False):
+        #unique id used in drawing and clearing gutter icons
         self.id = str(uuid.uuid4())
+        #the line number that this breakpoint is associated with
         self.lineNum = lineNum
-        self.lineText = lineText
+        #if enabled is false, no debugger; statement will be generated
+        #for this breakpoint at save time
         self.enabled = True
+        #sets the color of the gutter icon
         self.scope = scope
+        #the debugger statement to insert. if this is a conditional
+        #breakpoint, then this will be something like if(condition){debugger;}
         self.debugger = debugger
+        #if this is a conditional breakpoint, the user supplied
+        #condition is saved here
         self.condition = condition
 
         if self.condition:
             self.set_condition(condition)
 
+    #sets up the breakpoint as conditional and constructs the debugger
+    #statement that includes the condition
     def set_condition(self, condition):
         self.condition = condition
         self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
@@ -208,13 +251,12 @@ class Breakpoint():
 
 
 # handle text commands from user
+#TODO - break these out into separate commands so that
+#   i can use is_visible() to turn them on and off
 class JsDebuggr(sublime_plugin.TextCommand):
 
     breakpointLists = {}
 
-    #TODO - split JsDebuggr into separate commands and
-    #       use is_visible() to hide them as the context
-    #       dicatates
     def is_visible(self):
         return True
 
@@ -240,12 +282,17 @@ class JsDebuggr(sublime_plugin.TextCommand):
         else:
             self.toggle_break()
 
+    #gets the line numbers that current cursors are on. right now
+    #i am just interested in the first one, but in the future i might
+    #use the others to do multiple selections
     def get_line_nums(self):
         lineNums = []
         for s in self.view.sel():
             lineNums.append(self.view.rowcol(s.a)[0] + 1)
         return lineNums
 
+    #either returns an existing breakpoint list for the current view
+    #or creates a new one
     def get_breakpointList(self, view):
         viewId = str(view.id())
         if not viewId in self.breakpointLists:
@@ -254,6 +301,9 @@ class JsDebuggr(sublime_plugin.TextCommand):
 
         return self.breakpointLists[viewId]
 
+    #determines which line is currently selected and checks if
+    #a breakpoint is on that line. then decides to remove it, or
+    #create a new breakpoint.
     def toggle_break(self):
         breakpointList = self.get_breakpointList(self.view)
 
@@ -269,6 +319,9 @@ class JsDebuggr(sublime_plugin.TextCommand):
             #else, create a new one
             breakpoint = breakpointList.add(lineNum)
 
+    #determines which line is currently selected and checks if
+    #a breakpoint is on that line. then decides to enable or
+    #disable it.
     def toggle_enable_break(self):
         breakpointList = self.get_breakpointList(self.view)
         lineNum = self.get_line_nums()[0]
@@ -283,14 +336,21 @@ class JsDebuggr(sublime_plugin.TextCommand):
             printl("JsDebuggr: enabling breakpoint")
             breakpointList.enable(lineNum)
 
+    #brings up input panel to enter the conditional statement
+    #to be used with a conditional breakpoint
     def add_conditional_input(self):
         self.view.window().show_input_panel("Enter Condition:", "", self.add_conditional, None, None)
 
+    #creates a new breakpoint, setting the conditional property
+    #from the user supplied text.
     def add_conditional(self, text):
         breakpointList = self.get_breakpointList(self.view)
         lineNum = self.get_line_nums()[0]
         breakpointList.add(lineNum, text)
 
+    #looks up the existing breakpoints conditional property
+    #and brings up an input panel prepopulated with the current
+    #condition for editing.
     def edit_conditional_input(self):
         breakpointList = self.get_breakpointList(self.view)
         lineNum = self.get_line_nums()[0]
@@ -298,12 +358,12 @@ class JsDebuggr(sublime_plugin.TextCommand):
         if breakpoint.condition:
             self.view.window().show_input_panel("Enter Condition:", breakpoint.condition, self.edit_conditional, None, None)
 
+    #updates the existing conditional breakpoint with new condition
     def edit_conditional(self, text):
         printl(text)
         breakpointList = self.get_breakpointList(self.view)
         lineNum = self.get_line_nums()[0]
         breakpoint = breakpointList.get(lineNum)
-        #TODO - remove old debugger statement from document first?
         breakpoint.set_condition(text)
         #TODO - set_status probably doesn't belong here
         self.view.set_status(breakpoint.id, "JsDebuggr Condition: `%s`" % breakpoint.condition)
@@ -441,6 +501,8 @@ class EventListener(sublime_plugin.EventListener):
             #clear any debugger; statements from the doc
             view.run_command("clear_debug")
 
+    #determines if the selected line has a breakpoint, and if so
+    #does stuff related to that berakpoint
     def on_selection_modified(self, view):
         if not should_track_view(view):
             return
@@ -451,6 +513,8 @@ class EventListener(sublime_plugin.EventListener):
 
         #TODO - if this is a breakpoint, take note so that is_visible() can
         #       determine which context menu items to show
+        #if this breakpoint is a conditional, show the condition in the
+        #status bar
         if breakpoint and breakpoint.condition:
             view.set_status(breakpoint.id, "JsDebuggr Condition: `%s`" % breakpoint.condition)
             self.setStatuses.append(breakpoint.id)
