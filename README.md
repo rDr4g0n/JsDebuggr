@@ -15,7 +15,7 @@ Features
 * Enable and disable individual breakpoints or all at once.
 * Create conditional breakpoints.
 * Breakpoints stay in your document.
-* The underlying `debugger` stuff is hidden away where you don't have to look at it (and where it won't annoy your linter, who is already quite made at you anyway).
+* The underlying `debugger` stuff is hidden away where you don't have to look at it (and where it won't annoy your linter, who is already quite mad at me anyway).
 * Breakpoints work in injected or eval'd code, which is difficult or not possible with browser dev tools.
 
 
