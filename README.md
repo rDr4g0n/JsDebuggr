@@ -20,7 +20,7 @@ The benefits of a plugin to do this over entering debugger statements manually a
 
 Installation
 ------------
-Clone the repo to your Sublime Text `Packages folder`. Something like this should work: `C:\Users\User\AppData\Roaming\Sublime Text 2\Packages\JsDebuggr\`
+Clone the repo to your Sublime Text `Packages folder`. Something like this should work: `C:\Users\User\AppData\Roaming\Sublime Text 3\Packages\JsDebuggr\`
 
 
 Usage
