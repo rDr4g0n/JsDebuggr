@@ -46,14 +46,15 @@ Additionally, the right click menu allows for:
 
 Settings
 --------
-JsDebuggr has only a handful of settings for now. They can be found in the `JsDebuggr.sublime-settings` file. Note that this settings file is not being used as the settings are hard coded into the plugin for now.
+JsDebuggr has only a handful of settings for now. They can be found in the `JsDebuggr.sublime-settings` file.
 
 * `file_type_list` is an array of file extensions that should be enabled for scanning and tracking. The default value is `["html", "htm", "js"]`.
 * `autoscan_on_load` is a bool that indicates if a newly loaded doc should be for existing debugger statements, and those statements be transformed into breakpoints
-
+* `breakpoint_color`, `conditional_breakpoint_color`, and `disabled_breakpoint_color` determine the color of the gutter icon for breakpoints of various types.
+* `verbose` right now JsDebuggr dumps a lot into the console for troubleshooting. Setting this to false will prevent that behavior. Once it is in a better state, this will default to false.
 
 Future Features
 -----
 * save and load of multiple breakpoint sets
-* persist disabled breakpoints through document close/open
+* persist disabled breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
 * disable context menu options when they are not valid
