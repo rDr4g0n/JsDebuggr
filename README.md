@@ -59,3 +59,4 @@ Future Features
 * save and load of multiple breakpoint sets
 * persist disabled breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
 * disable context menu options when they are not valid
+* multiple selection support
