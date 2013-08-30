@@ -11,18 +11,24 @@ Of course, the js engine executing the code needs to support the `debugger` keyw
 
 Features
 --------
+Hey this thing is purty neat. Check it out:
 * Add and remove individual breakpoints, or remove all breakpoints at once.
 * Enable and disable individual breakpoints or all at once.
 * Create conditional breakpoints.
-* Breakpoints stay in your document.
+* Breakpoints stay in your document, so you can save and close, and later open it and they will still be there.
 * The underlying `debugger` stuff is hidden away where you don't have to look at it (and where it won't annoy your linter, who is already quite mad at me anyway).
-* Breakpoints work in injected or eval'd code, which is difficult or not possible with browser dev tools.
+* Breakpoints work in injected or eval'd code. It is often difficult or not possible to add breakpoints in browser dev tools.
+* Breakpoints stick to the line you want them to stick to and move when your code does. In browser dev tools, the breakpoints are absolutely assigned to a line number, so if you add or remove lines in your source, next time your refresh the page, the breakpoints from the browser dev tool will annoyingly be off by *n* number of lines.
 
+As in any wonderful relationship, there are down sides :(
+* You can't add or remove breakpoints during runtime. This can be frustrating when you want to turn off a breakpoint, but you don't want to reload the page (maybe you have a complex state you don't want to lose).
+* You have to save the document everytime you add, remove, or update a breakpoint since (I don't think) Sublime Text's plugin API won't allow a plugin to save the document for you.
 
 Installation
 ------------
 Clone the repo to your Sublime Text `Packages folder`. Something like this should work: `C:\Users\User\AppData\Roaming\Sublime Text 3\Packages\JsDebuggr\`
 
+I will add JsDebuggr to Package Control once I am more confident that it works without any show stopping or code eating bugs.
 
 Usage
 -----
@@ -58,5 +64,5 @@ Future Features
 -----
 * disable context menu options when they are not valid (for instance, "Edit Conditional Breakpoint" should only be visible when a conditional breakpoint is selected).
 * save and load of multiple breakpoint sets
-* persist disabled breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
+* persist *disabled* breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
 * multiple selection support
