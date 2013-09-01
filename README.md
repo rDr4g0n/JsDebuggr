@@ -24,6 +24,12 @@ As in any wonderful relationship, there are down sides :(
 * You can't add or remove breakpoints during runtime. This can be frustrating when you want to turn off a breakpoint, but you don't want to reload the page (maybe you have a complex state you don't want to lose).
 * You have to save the document everytime you add, remove, or update a breakpoint since (I don't think) Sublime Text's plugin API won't allow a plugin to save the document for you.
 
+
+What This Isn't
+---------------
+This plugin is not a developer console replacement. You will still need to open firebug or chrome dev tools or enable debugging in node.js, and use those tools to examine the stack, vars, etc. This plugin doesn't connect to those dev tools in any way. For that, you want a more advanced solution like [Sublime Web Inspector](http://sokolovstas.github.io/SublimeWebInspector/).
+
+
 Installation
 ------------
 Clone the repo to your Sublime Text `Packages folder`. Something like this should work: `C:\Users\User\AppData\Roaming\Sublime Text 3\Packages\JsDebuggr\`
@@ -53,7 +59,7 @@ Additionally, the right click menu allows for:
 
 Settings
 --------
-JsDebuggr has only a handful of settings for now. They can be found in the `JsDebuggr.sublime-settings` file.
+JsDebuggr has only a handful of settings, and they're not very useful. They can be found in the `JsDebuggr.sublime-settings` file.
 
 * `file_type_list` is an array of file extensions that should be enabled for scanning and tracking. The default value is `["html", "htm", "js"]`.
 * `autoscan_on_load` is a bool that indicates if a newly loaded doc should be scanned for existing debugger keywords, and those keywords be transformed into breakpoints
