@@ -35,6 +35,12 @@ DEBUG_STATEMENT = "/*JsDbg*/debugger;"
 CONDITIONAL_BEGIN_MARKER = "/*JsDbg-Begin*/"
 CONDITIONAL_END_MARKER = "/*JsDbg-End*/"
 
+#coffeescript style comments
+DEBUG_STATEMENT_COFFEE = "###JsDbg###debugger;"
+CONDITIONAL_BEGIN_MARKER_COFFEE = "###JsDbg-Begin###"
+CONDITIONAL_END_MARKER_COFFEE = "###JsDbg-End###"
+COFFEE_FILE_TYPE_LIST = settings.get("coffeescript_filetypes")
+
 #dict which stores a bool indicating if a view should
 #be tracked by JsDebuggr. the view id is the dict key
 #this dict is populated by should_track_view()
@@ -89,7 +95,16 @@ def get_breakpointList(view):
     viewId = str(view.id())
     if not viewId in breakpointLists:
         printl("JsDebuggr: creating new BreakpointList")
-        breakpointLists[viewId] = BreakpointList(view)
+
+        #determine if this is a coffeescript file. if so, specify
+        #that in BreakpointList. fix for https://github.com/rDr4g0n/JsDebuggr/issues/20
+        coffee = False
+        extension = view.file_name().split(".")[-1]
+        if extension in COFFEE_FILE_TYPE_LIST:
+            printl("JsDebuggr: this is a coffeescript file")
+            coffee = True
+
+        breakpointLists[viewId] = BreakpointList(view, coffee)
 
     return breakpointLists[viewId]
 
@@ -108,10 +123,11 @@ def get_line_nums(view):
 #of functions for retrieving, removing, sorting, and also
 #handles drawing the breakpoint circle in the gutter
 class BreakpointList():
-    def __init__(self, view):
+    def __init__(self, view, coffee=False):
         self.breakpoints = {}
         self.numLines = 0
         self.view = view
+        self.coffee = coffee
 
     def get(self, lineNum):
         lineNumStr = str(lineNum)
@@ -140,19 +156,21 @@ class BreakpointList():
     def add(self, lineNum, condition=None):
         lineNumStr = str(lineNum)
 
-        #setup breakpoint
-        debugger = DEBUG_STATEMENT
-
         #if there is already a breakpoint for this line, remove it
         if lineNumStr in self.breakpoints:
             self.remove(lineNum)
 
+        #if this is coffeescript, use coffee specific debugger
+        debugger = DEBUG_STATEMENT
+        if self.coffee:
+            debugger = DEBUG_STATEMENT_COFFEE
+
         printl("JsDebuggr: creating new breakpoint for line %i" % lineNum)
         breakpoint = Breakpoint(**{
             "lineNum": lineNum,
-            "enabled": True,
+            "condition": condition,
             "debugger": debugger,
-            "condition": condition
+            "coffee": self.coffee
         })
         #register breakpoint
         self.breakpoints[lineNumStr] = breakpoint
@@ -246,7 +264,7 @@ class BreakpointList():
 
 #model containing information about each breakpoint
 class Breakpoint():
-    def __init__(self, lineNum=0, enabled=True, scope=BREAK_SCOPE, debugger=DEBUG_STATEMENT, condition=False):
+    def __init__(self, lineNum=0, enabled=True, scope=BREAK_SCOPE, debugger=DEBUG_STATEMENT, condition=False, coffee=False):
         #unique id used in drawing and clearing gutter icons
         self.id = str(uuid.uuid4())
         #the line number that this breakpoint is associated with
@@ -262,6 +280,9 @@ class Breakpoint():
         #if this is a conditional breakpoint, the user supplied
         #condition is saved here
         self.condition = condition
+        #if this is coffeescript, make note so that proper debugger statements
+        #can be used
+        self.coffee = coffee
 
         if self.condition:
             self.set_condition(condition)
@@ -270,7 +291,12 @@ class Breakpoint():
     #statement that includes the condition
     def set_condition(self, condition):
         self.condition = condition
-        self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
+
+        if self.coffee:
+            self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER_COFFEE, self.condition, CONDITIONAL_END_MARKER_COFFEE, DEBUG_STATEMENT_COFFEE)
+        else:
+            self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
+
         #HACK - setting CONDITIONAL_SCOPE here is all hacksy
         self.scope = CONDITIONAL_SCOPE
         printl("JsDebuggr: conditional break: %s" % self.debugger)
@@ -484,20 +510,30 @@ class EventListener(sublime_plugin.EventListener):
 
         breakpointList = get_breakpointList(view)
 
+        #use different debug statements if regular js or coffeescript
+        if breakpointList.coffee:
+            debug_statement = DEBUG_STATEMENT_COFFEE
+            conditional_begin_marker = CONDITIONAL_BEGIN_MARKER_COFFEE
+            conditional_end_marker = CONDITIONAL_END_MARKER_COFFEE
+        else:
+            debug_statement = DEBUG_STATEMENT
+            conditional_begin_marker = CONDITIONAL_BEGIN_MARKER
+            conditional_end_marker = CONDITIONAL_END_MARKER
+
         if AUTOSCAN_ON_LOAD:
             #scan the doc for debugger; statements. if found, make em into
             #breakpoints and remove the statement
-            existingDebuggers = view.find_all(r'%s' % re.escape(DEBUG_STATEMENT))
+            existingDebuggers = view.find_all(r'%s' % re.escape(debug_statement))
             printl("JsDebuggr: found %i existing debugger statements" % len(existingDebuggers))
             for region in existingDebuggers:
                 condition = None
                 #TODO - this whole conditional check is very ugly and hacky. there
                 #       has to be a smarter way to do it... prolly a simple regex lawl
                 lineText = view.substr(view.line(region))
-                conditionalBegin = re.search(r'%s' % re.escape(CONDITIONAL_BEGIN_MARKER), lineText)
+                conditionalBegin = re.search(r'%s' % re.escape(conditional_begin_marker), lineText)
                 if conditionalBegin:
                     #this is a conditional break, so get the condition
-                    conditionalEnd = re.search(r'%s' % re.escape(CONDITIONAL_END_MARKER), lineText)
+                    conditionalEnd = re.search(r'%s' % re.escape(conditional_end_marker), lineText)
                     condition = lineText[conditionalBegin.end(0): conditionalEnd.start(0)]
                     printl("JsDebuggr: existing debugger is a conditional: '%s'" % condition)
 

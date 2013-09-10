@@ -1,6 +1,9 @@
 {
 	// An array of file types (by extension) that will be tracked for debugging
-	"file_type_list": ["htm", "html", "js"],
+	"file_type_list": ["htm", "html", "js", "coffee", "litcoffee"],
+
+	// An array of file types (by extension) that will be treated as coffeescript
+	"coffeescript_filetypes": ["coffee", "litcoffee"],
 
 	// Bool indicating if JsDebuggr should scan the document on load and create
 	// breakpoints for existing debugger; statements. Note that this will only
