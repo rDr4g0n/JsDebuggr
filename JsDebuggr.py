@@ -36,9 +36,6 @@ CONDITIONAL_BEGIN_MARKER = "/*JsDbg-Begin*/"
 CONDITIONAL_END_MARKER = "/*JsDbg-End*/"
 
 #coffeescript style comments
-DEBUG_STATEMENT_COFFEE = "###JsDbg###debugger;"
-CONDITIONAL_BEGIN_MARKER_COFFEE = "###JsDbg-Begin###"
-CONDITIONAL_END_MARKER_COFFEE = "###JsDbg-End###"
 COFFEE_FILE_TYPE_LIST = settings.get("coffeescript_filetypes")
 
 #dict which stores a bool indicating if a view should
@@ -160,16 +157,10 @@ class BreakpointList():
         if lineNumStr in self.breakpoints:
             self.remove(lineNum)
 
-        #if this is coffeescript, use coffee specific debugger
-        debugger = DEBUG_STATEMENT
-        if self.coffee:
-            debugger = DEBUG_STATEMENT_COFFEE
-
         printl("JsDebuggr: creating new breakpoint for line %i" % lineNum)
         breakpoint = Breakpoint(**{
             "lineNum": lineNum,
             "condition": condition,
-            "debugger": debugger,
             "coffee": self.coffee
         })
         #register breakpoint
@@ -274,9 +265,11 @@ class Breakpoint():
         self.enabled = True
         #sets the color of the gutter icon
         self.scope = scope
-        #the debugger statement to insert. if this is a conditional
-        #breakpoint, then this will be something like if(condition){debugger;}
-        self.debugger = debugger
+        #the debugger statement to insert. if this is a conditional      
+        if coffee:
+            self.debugger = "`%s`" % debugger
+        else:
+            self.debugger = debugger
         #if this is a conditional breakpoint, the user supplied
         #condition is saved here
         self.condition = condition
@@ -293,7 +286,8 @@ class Breakpoint():
         self.condition = condition
 
         if self.coffee:
-            self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER_COFFEE, self.condition, CONDITIONAL_END_MARKER_COFFEE, DEBUG_STATEMENT_COFFEE)
+            #TODO - should the conditional be pure js or coffeescript?
+            self.debugger = "`if(%s%s%s){%s}`" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
         else:
             self.debugger = "if(%s%s%s){%s}" % (CONDITIONAL_BEGIN_MARKER, self.condition, CONDITIONAL_END_MARKER, DEBUG_STATEMENT)
 
@@ -408,9 +402,16 @@ class WriteDebug(sublime_plugin.TextCommand):
         for id in breakpointList.breakpoints:
             breakpoint = breakpointList.breakpoints[id]
             if breakpoint.enabled:
-                #TODO - find existing debugger; on this line and remove?
-                #   or maybe dont even write if debugger; already exists?
+
                 point = self.view.text_point(int(breakpoint.lineNum)-1, 0)
+                lineText = self.view.substr(self.view.line(point))
+
+                #find offset of first non-whitespace character
+                #clever trick from http://stackoverflow.com/a/2378988
+                offset = len(lineText) - len(lineText.lstrip())
+
+                point = self.view.text_point(int(breakpoint.lineNum)-1, offset)
+                #insert the debugger statement
                 self.view.insert(edit, point, breakpoint.debugger)
 
 
@@ -510,15 +511,9 @@ class EventListener(sublime_plugin.EventListener):
 
         breakpointList = get_breakpointList(view)
 
-        #use different debug statements if regular js or coffeescript
-        if breakpointList.coffee:
-            debug_statement = DEBUG_STATEMENT_COFFEE
-            conditional_begin_marker = CONDITIONAL_BEGIN_MARKER_COFFEE
-            conditional_end_marker = CONDITIONAL_END_MARKER_COFFEE
-        else:
-            debug_statement = DEBUG_STATEMENT
-            conditional_begin_marker = CONDITIONAL_BEGIN_MARKER
-            conditional_end_marker = CONDITIONAL_END_MARKER
+        debug_statement = DEBUG_STATEMENT
+        conditional_begin_marker = CONDITIONAL_BEGIN_MARKER
+        conditional_end_marker = CONDITIONAL_END_MARKER
 
         if AUTOSCAN_ON_LOAD:
             #scan the doc for debugger; statements. if found, make em into
