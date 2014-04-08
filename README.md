@@ -68,6 +68,8 @@ JsDebuggr has only a handful of settings, and they're not very useful. They can 
 
 Future Features
 -----
+* fix a bug where the plugin breaks when sublime resumes a session (I think it's an issue with sublimes api not loading the settings file... or something).
+* publish on sublime package manager once the above bug is fixed.
 * disable context menu options when they are not valid (for instance, "Edit Conditional Breakpoint" should only be visible when a conditional breakpoint is selected).
 * save and load of multiple breakpoint sets
 * persist *disabled* breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
