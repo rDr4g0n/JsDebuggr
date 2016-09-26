@@ -27,8 +27,10 @@ class Breakpoint(object):
     def draw(self, view):
         # TODO - add marker
         # TODO - add tooltip text
-        #line = self.view.line(self.view.text_point(breakpoint.lineNum - 1, 0))
-        view.add_regions(self.id, [self.region], "keyword", "circle", sublime.HIDDEN | sublime.PERSISTENT)
+        color = "keyword"
+        if not self.enabled:
+            color = "comment"
+        view.add_regions(self.id, [self.region], color, "circle", sublime.HIDDEN | sublime.PERSISTENT)
         pass
 
     def disable(self):
@@ -64,20 +66,17 @@ class BreakpointLists(object):
         debug("added breakpoint")
         return b
 
-    def _get_breakpoint(self, view, line):
-        """
-        returns the breakpoint for the provided line
-        in the provided view, or creates one if absent,
-        and a bool indicating if a new breakpoint was created
-        """
+    def get_breakpoint(self, view, line, create=False):
         breakpointList = self._get_breakpoint_list(view)
         for b in breakpointList:
             if line.contains(b.region):
                 debug("found breakpoint for view %s" % view.id())
-                return (b, False)
-        b = self._add_breakpoint(view, line)
-        debug("created breakpoint for view %s" % view.id())
-        return (b, True)
+                return (b, True)
+        if(create):
+            b = self._add_breakpoint(view, line)
+            debug("created breakpoint for view %s" % view.id())
+            return (b, False)
+        return (False, False)
 
     def _remove_breakpoint(self, view, b):
         b.destroy(view)
@@ -89,13 +88,20 @@ class BreakpointLists(object):
         removes the breakpoint at line for id, or adds
         one if one is not present
         """
-        b, new = self._get_breakpoint(view, line)
-        if new:
-            b.draw(view)
-            debug("toggled breakpoint on")
-        else:
+        b, exists = self.get_breakpoint(view, line, create=True)
+        if exists:
             self._remove_breakpoint(view, b)
             debug("toggled breakpoint off")
+        else:
+            b.draw(view)
+            debug("toggled breakpoint on")
+
+    def toggleEnabled(self, view, line):
+        b, exists = self.get_breakpoint(view, line, create=True)
+        if exists:
+            b.enabled = not b.enabled
+            b.draw(view)
+            debug("changed breakpoint enable to", b.enabled)
 
 
 breakpointLists = BreakpointLists()
@@ -112,3 +118,55 @@ class JsDebuggrCommand(sublime_plugin.TextCommand):
         sel = self.view.sel()[0]
         line = self.view.line(sel)
         breakpointLists.toggle(self.view, line)
+
+class JsDebuggrAddCommand(sublime_plugin.TextCommand):
+    def run(self, view, **args):
+        debug("add")
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        breakpointLists.toggle(self.view, line)
+
+    def is_visible(self):
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        _, exists = breakpointLists.get_breakpoint(self.view, line)
+        return not exists
+
+class JsDebuggrRemoveCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        debug("add")
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        breakpointLists.toggle(self.view, line)
+
+    def is_visible(self):
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        _, exists = breakpointLists.get_breakpoint(self.view, line)
+        return exists
+
+class JsDebuggrDisableCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        debug("disable")
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        breakpointLists.toggleEnabled(self.view, line)
+
+    def is_visible(self):
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        b, _ = breakpointLists.get_breakpoint(self.view, line)
+        return b and b.enabled
+
+class JsDebuggrEnableCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        debug("enable")
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        breakpointLists.toggleEnabled(self.view, line)
+
+    def is_visible(self):
+        sel = self.view.sel()[0]
+        line = self.view.line(sel)
+        b, _ = breakpointLists.get_breakpoint(self.view, line)
+        return b and not b.enabled
