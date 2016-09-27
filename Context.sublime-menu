@@ -11,41 +11,31 @@
 			"caption": "Remove Breakpoint",
 			"command": "js_debuggr_remove"
 		},{
-			"id": "JsDebuggr-disable",
-			"caption": "Disable Breakpoint",
-			"command": "js_debuggr_disable"
+			"caption": "-",
 		},{
 			"id": "JsDebuggr-enable",
 			"caption": "Enable Breakpoint",
 			"command": "js_debuggr_enable"
 		},{
-			"id": "JsDebuggr-remove_all",
-			"caption": "Remove All Breakpoints",
-			"command": "js_debuggr",
-			"args": {
-				"removeAll": true
-			}
+			"id": "JsDebuggr-disable",
+			"caption": "Disable Breakpoint",
+			"command": "js_debuggr_disable"
 		},{
-			"id": "JsDebuggr-toggle_enable",
-			"caption": "Enable/Disable Breakpoint",
-			"command": "js_debuggr",
-			"args": {
-				"toggleEnable": true
-			}
+			"caption": "-",
 		},{
 			"id": "JsDebuggr-disable_all",
 			"caption": "Disable All Breakpoints",
-			"command": "js_debuggr",
-			"args": {
-				"disableAll": true
-			}
+			"command": "js_debuggr_disable_all",
 		},{
 			"id": "JsDebuggr-enable_all",
 			"caption": "Enable All Breakpoints",
-			"command": "js_debuggr",
-			"args": {
-				"enableAll": true
-			}
+			"command": "js_debuggr_enable_all",
+		},{
+			"caption": "-",
+		},{
+			"id": "JsDebuggr-remove_all",
+			"caption": "Remove All Breakpoints",
+			"command": "js_debuggr_remove_all",
 		}
 	]
 }]

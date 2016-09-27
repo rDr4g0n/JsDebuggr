@@ -28,16 +28,16 @@ class Breakpoint(object):
         # TODO - add marker
         # TODO - add tooltip text
         color = "keyword"
-        if not self.enabled:
+        if self.enabled == False:
             color = "comment"
         view.add_regions(self.id, [self.region], color, "circle", sublime.HIDDEN | sublime.PERSISTENT)
         pass
 
     def disable(self):
-        self.disabled = True
+        self.enabled = False
 
     def enable(self):
-        self.disabled = False
+        self.enabled = True
 
     def destroy(self, view):
         view.erase_regions(self.id)
@@ -63,25 +63,21 @@ class BreakpointLists(object):
         breakpointList = self._get_breakpoint_list(view)
         b = Breakpoint(line)
         breakpointList.append(b)
-        debug("added breakpoint")
         return b
 
     def get_breakpoint(self, view, line, create=False):
         breakpointList = self._get_breakpoint_list(view)
         for b in breakpointList:
             if line.contains(b.region):
-                debug("found breakpoint for view %s" % view.id())
                 return (b, True)
         if(create):
             b = self._add_breakpoint(view, line)
-            debug("created breakpoint for view %s" % view.id())
             return (b, False)
         return (False, False)
 
     def _remove_breakpoint(self, view, b):
         b.destroy(view)
         self._get_breakpoint_list(view).remove(b)
-        debug("removed breakpoint")
 
     def toggle(self, view, line):
         """
@@ -91,17 +87,35 @@ class BreakpointLists(object):
         b, exists = self.get_breakpoint(view, line, create=True)
         if exists:
             self._remove_breakpoint(view, b)
-            debug("toggled breakpoint off")
         else:
             b.draw(view)
-            debug("toggled breakpoint on")
 
-    def toggleEnabled(self, view, line):
+    def removeAll(self, view):
+        for b in self._get_breakpoint_list(view):
+            b.destroy(view)
+        del self.breakpointLists[view.id()]
+
+    def enableAll(self, view):
+        for b in self._get_breakpoint_list(view):
+            b.enable()
+            b.draw(view)
+
+    def disableAll(self, view):
+        for b in self._get_breakpoint_list(view):
+            b.disable()
+            b.draw(view)
+
+    def enable(self, view, line):
         b, exists = self.get_breakpoint(view, line, create=True)
         if exists:
-            b.enabled = not b.enabled
+            b.enable()
             b.draw(view)
-            debug("changed breakpoint enable to", b.enabled)
+
+    def disable(self, view, line):
+        b, exists = self.get_breakpoint(view, line, create=True)
+        if exists:
+            b.disable()
+            b.draw(view)
 
 
 breakpointLists = BreakpointLists()
@@ -126,7 +140,7 @@ class JsDebuggrAddCommand(sublime_plugin.TextCommand):
         line = self.view.line(sel)
         breakpointLists.toggle(self.view, line)
 
-    def is_visible(self):
+    def is_enabled(self):
         sel = self.view.sel()[0]
         line = self.view.line(sel)
         _, exists = breakpointLists.get_breakpoint(self.view, line)
@@ -139,33 +153,53 @@ class JsDebuggrRemoveCommand(sublime_plugin.TextCommand):
         line = self.view.line(sel)
         breakpointLists.toggle(self.view, line)
 
-    def is_visible(self):
+    def is_enabled(self):
         sel = self.view.sel()[0]
         line = self.view.line(sel)
         _, exists = breakpointLists.get_breakpoint(self.view, line)
         return exists
+
+
+class JsDebuggrRemoveAllCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        debug("remove all")
+        breakpointLists.removeAll(self.view)
+
 
 class JsDebuggrDisableCommand(sublime_plugin.TextCommand):
     def run(self, edit, **args):
         debug("disable")
         sel = self.view.sel()[0]
         line = self.view.line(sel)
-        breakpointLists.toggleEnabled(self.view, line)
+        breakpointLists.disable(self.view, line)
 
-    def is_visible(self):
+    def is_enabled(self):
         sel = self.view.sel()[0]
         line = self.view.line(sel)
         b, _ = breakpointLists.get_breakpoint(self.view, line)
         return b and b.enabled
+
+
+class JsDebuggrDisableAllCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        debug("disable all")
+        breakpointLists.disableAll(self.view)
+
+
+class JsDebuggrEnableAllCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        debug("enable all")
+        breakpointLists.enableAll(self.view)
+
 
 class JsDebuggrEnableCommand(sublime_plugin.TextCommand):
     def run(self, edit, **args):
         debug("enable")
         sel = self.view.sel()[0]
         line = self.view.line(sel)
-        breakpointLists.toggleEnabled(self.view, line)
+        breakpointLists.enable(self.view, line)
 
-    def is_visible(self):
+    def is_enabled(self):
         sel = self.view.sel()[0]
         line = self.view.line(sel)
         b, _ = breakpointLists.get_breakpoint(self.view, line)
