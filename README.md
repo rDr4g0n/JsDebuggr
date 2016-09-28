@@ -1,5 +1,29 @@
 Summary
 ---------
+NOTE: In the process of a refactor!
+
+TODO
+----------
+* actually write debugs
+* edit breakpoint (add conditional)
+* show conditional in status bar
+* only apply to correct filetype
+* keyboard shortcuts
+* scan doc and create breakpoints from existing debuggers
+* Update readme
+* package control!
+
+* break out into a few more files where sensible
+* show conditional as phantom?
+* click gutter to add breakpoint?
+* right click gutter to edit breakpoint?
+* persist breakpoints via pickle or something?
+* settings file
+* clear breakpoint regions when jsdebugger loads
+* add some sorta global breakpoint disable in js-land so users can disable breakpoints in their debugger
+* multiple selections
+
+
 Debugging javascript can be tedious due to the lack of integration between the code editor and the browsers' debugging tools. JsDebuggr aims to make it a tad easier by allowing the user to easily manage breakpoints from the Sublime Text editor.  
 
 The way JsDebuggr works is by inserting the `debugger` keyword at each breakpoint when the document is saved. Since this happens only when the document is saved, the user never sees the breakpoints. They just work :D
@@ -65,12 +89,3 @@ JsDebuggr has only a handful of settings, and they're not very useful. They can 
 * `autoscan_on_load` is a bool that indicates if a newly loaded doc should be scanned for existing debugger keywords, and those keywords be transformed into breakpoints
 * `breakpoint_color`, `conditional_breakpoint_color`, and `disabled_breakpoint_color` determine the color of the gutter icon for breakpoints of various types.
 * `verbose` right now JsDebuggr dumps a lot into the console for troubleshooting. Setting this to false will prevent that behavior. Once it is in a better state, this will default to false.
-
-Future Features
------
-* fix a bug where the plugin breaks when sublime resumes a session (I think it's an issue with sublimes api not loading the settings file... or something).
-* publish on sublime package manager once the above bug is fixed.
-* disable context menu options when they are not valid (for instance, "Edit Conditional Breakpoint" should only be visible when a conditional breakpoint is selected).
-* save and load of multiple breakpoint sets
-* persist *disabled* breakpoints through document close/open (regular and contional breakpoints persist, but disabled breakpoints do not)
-* multiple selection support
