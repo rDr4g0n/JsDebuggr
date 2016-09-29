@@ -23,6 +23,9 @@ TODO
 * add some sorta global breakpoint disable in js-land so users can disable breakpoints in their debugger
 * multiple selections
 
+bugs
+------------
+* undo can remove a breakpoint region, causing things to splode
 
 Debugging javascript can be tedious due to the lack of integration between the code editor and the browsers' debugging tools. JsDebuggr aims to make it a tad easier by allowing the user to easily manage breakpoints from the Sublime Text editor.  
 
