@@ -1,5 +1,6 @@
 import sublime
 import uuid
+import re
 from .utils import debug, get_selected_line, get_line_num
 
 class MissingRegionException(Exception):
@@ -7,6 +8,8 @@ class MissingRegionException(Exception):
 
 class MissingBreakpointException(Exception):
     pass
+
+DEBUGGER = ";'JSDBG';if(%s)debugger; "
 
 
 class Breakpoint(object):
@@ -19,6 +22,7 @@ class Breakpoint(object):
         print("breakpoint added for line %s" % line)
         self.enabled = True
         self.id = str(uuid.uuid4())
+        self.condition = None
         self.draw(view, line)
 
     def draw(self, view, line=None, hidden=False):
@@ -27,13 +31,18 @@ class Breakpoint(object):
         # line to draw at 
         if line is None:
             # TODO - catch MissingRegionException?
-            line = self.get_bp(view)
+            line = self.getIcon(view)
             self.clear(view)
 
-        # TODO - add tooltip text
+        # enabled, no conditional
         color = "keyword"
+        # if disabled
         if self.enabled == False:
             color = "comment"
+        # if conditional
+        elif self.condition is not None:
+            color = "string"
+        # hidden beats all
         if hidden:
             color = ""
         view.add_regions(self.id, [line], color, "circle", sublime.HIDDEN | sublime.PERSISTENT)
@@ -41,7 +50,7 @@ class Breakpoint(object):
     def clear(self, view):
         view.erase_regions(self.id)
 
-    def get_bp(self, view):
+    def getIcon(self, view):
         regions = view.get_regions(self.id)
         if not len(regions):
             raise MissingRegionException()
@@ -53,39 +62,64 @@ class Breakpoint(object):
     def enable(self):
         self.enabled = True
 
+    def edit(self, condition):
+        self.condition = condition
+
+    def getWritableCondition(self):
+        """
+        returns a string for writing into the
+        conditional part of the debugger statement
+        """
+
+        if not self.enabled:
+            # if not enabled, set condition to
+            # false, so debugger will never be hit
+            return "false"
+        if self.condition is None:
+            # if enabled but no condition is
+            # present, return true
+            return "true"
+        return self.condition
+
     def destroy(self, view):
         self.clear(view)
 
     def isContained(self, view, line):
         bp = None
         try:
-            bp = self.get_bp(view)
+            bp = self.getIcon(view)
         except (MissingRegionException):
             debug("Couldnt find breakpoint region... must've been undo'd from history")
             return
         return line.contains(bp)
 
     def write(self, view, edit):
-        if self.enabled:
-            bp = None
-            try:
-                bp = self.get_bp(view)
-            except (MissingRegionException):
-                debug("Couldnt find breakpoint region... must've been undo'd from history")
-                return
-            line = view.line(bp)
-            lineNum = get_line_num(view, line)
-            lineText = view.substr(line)
-            # get offset to first non-whitespace character
-            offset = len(lineText) - len(lineText.lstrip())
-            # need 0 based lineNum, so -1
-            point = view.text_point(lineNum-1, offset)
-            # TODO - actual debugger template
-            # TODO - conditional
-            view.insert(edit, point, ";'JsDebuggr';")
+        bp = None
+        try:
+            bp = self.getIcon(view)
+        except (MissingRegionException):
+            debug("Couldnt find breakpoint region... must've been undo'd from history")
+            return
+        line = view.line(bp)
+        lineNum = get_line_num(view, line)
+        lineText = view.substr(line)
+        # get offset to first non-whitespace character
+        offset = len(lineText) - len(lineText.lstrip())
+        # need 0 based lineNum, so -1
+        point = view.text_point(lineNum-1, offset)
+        view.insert(edit, point, DEBUGGER % self.getWritableCondition())
 
     def unwrite(self, view, edit):
-        # TODO - clear previously written debug statement
+        bp = None
+        try:
+            bp = self.getIcon(view)
+        except (MissingRegionException):
+            debug("Couldnt find breakpoint region... must've been undo'd from history")
+            return
+        line = view.line(bp)
+        lineText = view.substr(line)
+        dedebugged = re.sub(r'%s' % re.escape(DEBUGGER % self.getWritableCondition()), '', lineText)
+        view.replace(edit, line, dedebugged)
         pass
 
 
@@ -115,6 +149,16 @@ class BreakpointList(object):
             raise MissingBreakpointException("No breakpoint at line %s, region %s" % (get_line_num(line), line))
         b.destroy(self.view)
         self.list.remove(b)
+
+    def edit(self, line):
+        b = self.get(line)
+        if not b:
+            raise MissingBreakpointException("No breakpoint at line %s, region %s" % (get_line_num(line), line))
+        currCondition = b.condition or ""
+        def doEdit(condition):
+            b.edit(condition)
+            b.draw(self.view, line)
+        self.view.window().show_input_panel("Enter Condition:", currCondition, doEdit, None, None)
 
     def removeAll(self):
         for b in self.list:

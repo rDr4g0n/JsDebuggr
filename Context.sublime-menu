@@ -11,6 +11,10 @@
 			"caption": "Remove Breakpoint",
 			"command": "js_debuggr_remove"
 		},{
+			"id": "JsDebuggr-edit",
+			"caption": "Edit Breakpoint",
+			"command": "js_debuggr_edit"
+		},{
 			"caption": "-",
 		},{
 			"id": "JsDebuggr-enable",

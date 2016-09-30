@@ -4,12 +4,9 @@ NOTE: In the process of a refactor!
 
 TODO
 ----------
-* actually write debugs
-* edit breakpoint (add conditional)
-* show conditional in status bar
-* only apply to correct filetype
-* keyboard shortcuts
 * scan doc and create breakpoints from existing debuggers
+* only apply to correct filetype (or context)
+* keyboard shortcuts
 * Update readme
 * package control!
 
