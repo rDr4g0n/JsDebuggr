@@ -9,9 +9,6 @@ class MissingRegionException(Exception):
 class MissingBreakpointException(Exception):
     pass
 
-DEBUGGER = ";'JSDBG';if(%s)debugger; "
-
-
 class Breakpoint(object):
     """
     keeps track of a breakpoint's config, including the 
@@ -23,6 +20,10 @@ class Breakpoint(object):
         self.enabled = True
         self.id = str(uuid.uuid4())
         self.condition = None
+        viewSettings = view.settings()
+        self.enabledCondition = viewSettings.get("enabled")
+        self.disabledCondition = viewSettings.get("disabled")
+        self.debugger = viewSettings.get("debugger")
         self.draw(view, line)
 
     def draw(self, view, line=None, hidden=False):
@@ -63,9 +64,7 @@ class Breakpoint(object):
         self.enabled = True
 
     def edit(self, condition):
-        # TODO - dynamically load the enabled/disabled conditions
-        # dont allow the enabled/disabled conditions
-        if condition != "true" and condition != "false":
+        if condition != self.enabledCondition and condition != self.disabledCondition:
             self.condition = condition
 
     def getWritableCondition(self):
@@ -77,11 +76,11 @@ class Breakpoint(object):
         if not self.enabled:
             # if not enabled, set condition to
             # false, so debugger will never be hit
-            return "false"
+            return self.disabledCondition
         if self.condition is None:
             # if enabled but no condition is
             # present, return true
-            return "true"
+            return self.enabledCondition
         return self.condition
 
     def destroy(self, view):
@@ -110,7 +109,7 @@ class Breakpoint(object):
         offset = len(lineText) - len(lineText.lstrip())
         # need 0 based lineNum, so -1
         point = view.text_point(lineNum-1, offset)
-        view.insert(edit, point, DEBUGGER % self.getWritableCondition())
+        view.insert(edit, point, self.debugger % self.getWritableCondition())
 
     def unwrite(self, view, edit):
         bp = None
@@ -121,7 +120,7 @@ class Breakpoint(object):
             return
         line = view.line(bp)
         lineText = view.substr(line)
-        dedebugged = re.sub(r'%s' % re.escape(DEBUGGER % self.getWritableCondition()), '', lineText)
+        dedebugged = re.sub(r'%s' % re.escape(self.debugger % self.getWritableCondition()), '', lineText)
         view.replace(edit, line, dedebugged)
         pass
 

@@ -5,6 +5,8 @@ from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegi
 from .utils import debug, get_selected_line, get_line_num
 
 breakpointLists = BreakpointLists()
+# TODO - break languages out into its own thingy
+settings = sublime.load_settings("jsdebuggr.sublime-settings")
 
 class JsDebuggrAddCommand(sublime_plugin.TextCommand):
     def run(self, edit, **args):
@@ -119,6 +121,20 @@ class RemoveDebug(sublime_plugin.TextCommand):
         region = sublime.Region(a,b)
         self.view.erase(edit, region)
 
+def get_current_syntax(view):
+    # TODO - this seems like its just waitin to asplode
+    currSyntax = view.settings().get("syntax").split("/")[-1]
+    debug("current syntax is %s" % currSyntax)
+    languages = settings.get("languages")
+    # TODO - one day become a real grown python
+    # developer and turn this into an
+    # impenetrable one-liner
+    for l in languages:
+        for s in l["syntaxes"]:
+            if s == currSyntax:
+                return l
+    return None
+
 class EventListener(sublime_plugin.EventListener):
     # keep track of visible statuses so
     # they can be cleared on selection change
@@ -160,8 +176,20 @@ class EventListener(sublime_plugin.EventListener):
             self.setStatuses = []
 
     def on_load(self, view):
-        # TODO - use DEBUGGER var
-        debuggerRe = ";'JSDBG';if\((.*)\)debugger; " 
+        syntax = get_current_syntax(view)
+        if syntax is None:
+            debug("aint gonna bother with %s, I don't have a matching syntax" % view.file_name())
+            return
+
+        viewSettings = view.settings()
+        viewSettings.set("language", syntax)
+        viewSettings.set("debugger", syntax["debugger"])
+        viewSettings.set("debuggerRegex", syntax["debuggerRegex"])
+        viewSettings.set("enabled", syntax["enabled"])
+        viewSettings.set("disabled", syntax["disabled"])
+        viewSettings.set("scopes", syntax["scopes"])
+
+        debuggerRe = viewSettings.get("debuggerRegex")
         existingDebuggers = view.find_all(debuggerRe)
         debug("found %i existing debugger statements" % len(existingDebuggers))
 
@@ -176,8 +204,11 @@ class EventListener(sublime_plugin.EventListener):
             lineNum = get_line_num(view, d)
             debug("found debug at", lineNum, "with condition", condition)
             b = l.add(d)
+            
             # TODO - this is very internals-y, probably
             # breaking an abstraction
+            if condition == syntax["disabled"]:
+                b.disable()
             b.edit(condition)
             b.draw(view)
 

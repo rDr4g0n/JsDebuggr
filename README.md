@@ -4,17 +4,14 @@ NOTE: In the process of a refactor!
 
 TODO
 ----------
-* python support (artibrary language support)
-	* debug statement
-	* enable condition
-	* disable condition
-	* scope to apply to
-	* filetype to apply to
-* only apply to correct filetype (or context)
+* proper python suppeort (might not be possible in one line)
 * keyboard shortcuts
 * Update readme
 * package control!
 
+* logpoints
+	* adds native log command after current line
+	* takes log string 
 * store regions of breakpoint text when writing and delete region after save?
 * show conditional as phantom?
 * click gutter to add breakpoint?
