@@ -1,3 +1,4 @@
+import re
 import sublime
 import sublime_plugin
 from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegionException, MissingBreakpointException, DEBUGGER
@@ -112,6 +113,12 @@ class UnWriteDebug(sublime_plugin.TextCommand):
         for b in l:
             b.unwrite(self.view, edit)
 
+# a lil hack to get an edit context from inside a view
+class RemoveDebug(sublime_plugin.TextCommand):
+    def run(self, edit, a, b):
+        region = sublime.Region(a,b)
+        self.view.erase(edit, region)
+
 class EventListener(sublime_plugin.EventListener):
     # keep track of visible statuses so
     # they can be cleared on selection change
@@ -154,12 +161,32 @@ class EventListener(sublime_plugin.EventListener):
 
     def on_load(self, view):
         # TODO - use DEBUGGER var
-        existingDebuggers = view.find_all(";'JSDBG';if(.*)debugger;")
+        debuggerRe = ";'JSDBG';if\((.*)\)debugger; " 
+        existingDebuggers = view.find_all(debuggerRe)
         debug("found %i existing debugger statements" % len(existingDebuggers))
-        debug("%s" % existingDebuggers)
-        for d in existingDebuggers:
-            pass
 
-            # TODO - extract condition
-            # TODO - delete debugger text
-            # TODO - create breakpoints
+        l = breakpointLists.get(view)
+
+        for d in existingDebuggers:
+            string = view.substr(d)
+            reMatch = re.match(debuggerRe, string);
+            condition = None
+            if reMatch:
+                condition = reMatch.group(1)
+            lineNum = get_line_num(view, d)
+            debug("found debug at", lineNum, "with condition", condition)
+            b = l.add(d)
+            # TODO - this is very internals-y, probably
+            # breaking an abstraction
+            b.edit(condition)
+            b.draw(view)
+
+        # delete the debugger statements now that the
+        # breakpoints have been created
+        for d in existingDebuggers:
+            view.run_command("remove_debug", {"a": d.a, "b": d.b})
+
+        # were editing the view, but dont want it to
+        # be marked dirty, so mark it as scratch
+        debug("marking view as scratch")
+        view.set_scratch(True)

@@ -4,21 +4,27 @@ NOTE: In the process of a refactor!
 
 TODO
 ----------
-* scan doc and create breakpoints from existing debuggers
+* python support (artibrary language support)
+	* debug statement
+	* enable condition
+	* disable condition
+	* scope to apply to
+	* filetype to apply to
 * only apply to correct filetype (or context)
 * keyboard shortcuts
 * Update readme
 * package control!
 
-* break out into a few more files where sensible
+* store regions of breakpoint text when writing and delete region after save?
 * show conditional as phantom?
 * click gutter to add breakpoint?
 * right click gutter to edit breakpoint?
 * persist breakpoints via pickle or something?
 * settings file
-* clear breakpoint regions when jsdebugger loads
+* clear breakpoint regions when jsdebugger reloads
 * add some sorta global breakpoint disable in js-land so users can disable breakpoints in their debugger
 * multiple selections
+* dont load module for view if syntax aint python, js, or html
 
 bugs
 ------------

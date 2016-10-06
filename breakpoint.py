@@ -63,7 +63,10 @@ class Breakpoint(object):
         self.enabled = True
 
     def edit(self, condition):
-        self.condition = condition
+        # TODO - dynamically load the enabled/disabled conditions
+        # dont allow the enabled/disabled conditions
+        if condition != "true" and condition != "false":
+            self.condition = condition
 
     def getWritableCondition(self):
         """
