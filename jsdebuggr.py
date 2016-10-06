@@ -2,7 +2,7 @@ import re
 import sublime
 import sublime_plugin
 from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegionException, MissingBreakpointException, DEBUGGER
-from .utils import debug, get_selected_line, get_line_num
+from .utils import debug, get_selected_line, get_line_num, get_current_syntax, should_track
 
 breakpointLists = BreakpointLists()
 # TODO - break languages out into its own thingy
@@ -102,6 +102,41 @@ class JsDebuggrEnableCommand(sublime_plugin.TextCommand):
         return bool(b and not b.enabled)
 
 
+class JsDebuggrToggleCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        l = breakpointLists.get(self.view)
+        line, lineNum = get_selected_line(self.view)
+        debug("toggle at", lineNum)
+        b = l.get(line)
+        if b:
+            l.remove(line)
+        else:
+            l.add(line)
+
+
+class JsDebuggrToggleEditCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        l = breakpointLists.get(self.view)
+        line, lineNum = get_selected_line(self.view)
+        debug("toggle at", lineNum)
+        b = l.get(line)
+        if not b:
+            l.add(line)
+        l.edit(line)
+
+
+class JsDebuggrToggleEnableCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        l = breakpointLists.get(self.view)
+        line, lineNum = get_selected_line(self.view)
+        debug("toggle enable at", lineNum)
+        b = l.get(line)
+        if b and b.enabled:
+            l.disable(line)
+        elif b and not b.enabled:
+            l.enable(line)
+
+
 #write the debugger; statements to the document before save
 class WriteDebug(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -121,19 +156,6 @@ class RemoveDebug(sublime_plugin.TextCommand):
         region = sublime.Region(a,b)
         self.view.erase(edit, region)
 
-def get_current_syntax(view):
-    # TODO - this seems like its just waitin to asplode
-    currSyntax = view.settings().get("syntax").split("/")[-1]
-    debug("current syntax is %s" % currSyntax)
-    languages = settings.get("languages")
-    # TODO - one day become a real grown python
-    # developer and turn this into an
-    # impenetrable one-liner
-    for l in languages:
-        for s in l["syntaxes"]:
-            if s == currSyntax:
-                return l
-    return None
 
 class EventListener(sublime_plugin.EventListener):
     # keep track of visible statuses so
@@ -141,42 +163,8 @@ class EventListener(sublime_plugin.EventListener):
     # TODO - not really great :/
     setStatuses = []
 
-    def on_pre_save(self, view):
-        debug("inserting debuggers")
-        view.run_command("write_debug")
-
-    def on_post_save(self, view):
-        debug("removing debuggers")
-        view.run_command("un_write_debug")
-        # setting view to scratch prevents the "unsaved changes"
-        # warning when closing a file whos only changes are
-        # adding/removing debuggers
-        debug("marking view as scratch")
-        view.set_scratch(True)
-
-    def on_modified(self, view):
-        # TODO - will this incorrectly set actual scratch views
-        # to not scratch?
-        if view.is_scratch():
-            debug("view is marked as scratch. setting scratch to false.")
-            view.set_scratch(False)
-
-    def on_selection_modified(self, view):        
-        l = breakpointLists.get(view)
-        line, lineNum = get_selected_line(view)
-        b = l.get(line)
-
-        # TODO - multiple cursors?
-        if b and b.condition is not None:
-            view.set_status(b.id, "JsDebuggr Condition: %s" % b.condition)
-            self.setStatuses.append(b.id)
-        else:
-            for id in self.setStatuses:
-                view.erase_status(id)
-            self.setStatuses = []
-
     def on_load(self, view):
-        syntax = get_current_syntax(view)
+        syntax = get_current_syntax(view, settings)
         if syntax is None:
             debug("aint gonna bother with %s, I don't have a matching syntax" % view.file_name())
             return
@@ -204,7 +192,7 @@ class EventListener(sublime_plugin.EventListener):
             lineNum = get_line_num(view, d)
             debug("found debug at", lineNum, "with condition", condition)
             b = l.add(d)
-            
+
             # TODO - this is very internals-y, probably
             # breaking an abstraction
             if condition == syntax["disabled"]:
@@ -221,3 +209,45 @@ class EventListener(sublime_plugin.EventListener):
         # be marked dirty, so mark it as scratch
         debug("marking view as scratch")
         view.set_scratch(True)
+
+    def on_pre_save(self, view):
+        if not should_track(view):
+            return
+        debug("inserting debuggers")
+        view.run_command("write_debug")
+
+    def on_post_save(self, view):
+        if not should_track(view):
+            return
+        debug("removing debuggers")
+        view.run_command("un_write_debug")
+        # setting view to scratch prevents the "unsaved changes"
+        # warning when closing a file whos only changes are
+        # adding/removing debuggers
+        debug("marking view as scratch")
+        view.set_scratch(True)
+
+    def on_modified(self, view):
+        if not should_track(view):
+            return
+        # TODO - will this incorrectly set actual scratch views
+        # to not scratch?
+        if view.is_scratch():
+            debug("view is marked as scratch. setting scratch to false.")
+            view.set_scratch(False)
+
+    def on_selection_modified(self, view):
+        if not should_track(view):
+            return
+        l = breakpointLists.get(view)
+        line, lineNum = get_selected_line(view)
+        b = l.get(line)
+
+        # TODO - multiple cursors?
+        if b and b.condition is not None:
+            view.set_status(b.id, "JsDebuggr Condition: %s" % b.condition)
+            self.setStatuses.append(b.id)
+        else:
+            for id in self.setStatuses:
+                view.erase_status(id)
+            self.setStatuses = []

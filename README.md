@@ -4,11 +4,12 @@ NOTE: In the process of a refactor!
 
 TODO
 ----------
-* proper python suppeort (might not be possible in one line)
-* keyboard shortcuts
+* rename
 * Update readme
-* package control!
+* package control! yay!
 
+* use scopes to target js breakpoints in html
+* proper python support (might not be possible in one line?)
 * logpoints
 	* adds native log command after current line
 	* takes log string 
@@ -16,16 +17,13 @@ TODO
 * show conditional as phantom?
 * click gutter to add breakpoint?
 * right click gutter to edit breakpoint?
-* persist breakpoints via pickle or something?
-* settings file
-* clear breakpoint regions when jsdebugger reloads
 * add some sorta global breakpoint disable in js-land so users can disable breakpoints in their debugger
 * multiple selections
-* dont load module for view if syntax aint python, js, or html
 
 bugs
 ------------
 * undo can remove a breakpoint region, causing things to splode
+* changing the language debugger setting can cause existing breakpoints not to be picked up
 
 Debugging javascript can be tedious due to the lack of integration between the code editor and the browsers' debugging tools. JsDebuggr aims to make it a tad easier by allowing the user to easily manage breakpoints from the Sublime Text editor.  
 
