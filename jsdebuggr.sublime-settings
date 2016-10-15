@@ -8,14 +8,6 @@
 			"disabled": "false",
 			"scopes": [],
 			"syntaxes": ["JavaScript.sublime-syntax"]
-		},{
-			"name": "python",
-			"debugger": "if(%s):import pdb;pdb.set_trace(); ",
-			"debuggerRegex": "if\\((.*)\\):import pdb;pdb.set_trace(); ",
-			"enabled": "True",
-			"disabled": "False",
-			"scopes": [],
-			"syntaxes": ["Python.sublime-syntax"]
 		}
 	]
 }

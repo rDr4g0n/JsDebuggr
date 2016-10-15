@@ -1,7 +1,7 @@
 import re
 import sublime
 import sublime_plugin
-from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegionException, MissingBreakpointException, DEBUGGER
+from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegionException, MissingBreakpointException
 from .utils import debug, get_selected_line, get_line_num, get_current_syntax, should_track
 
 breakpointLists = BreakpointLists()

@@ -4,21 +4,23 @@ NOTE: In the process of a refactor!
 
 TODO
 ----------
-* rename
+* add/test html support
+* store debugger text region, then delete after save (instead of regex)
 * Update readme
 * package control! yay!
 
 * use scopes to target js breakpoints in html
-* proper python support (might not be possible in one line?)
+* python?
+* rename?
 * logpoints
 	* adds native log command after current line
 	* takes log string 
-* store regions of breakpoint text when writing and delete region after save?
 * show conditional as phantom?
 * click gutter to add breakpoint?
 * right click gutter to edit breakpoint?
 * add some sorta global breakpoint disable in js-land so users can disable breakpoints in their debugger
 * multiple selections
+* can probably get rid of debuggerRe field on language def
 
 bugs
 ------------
