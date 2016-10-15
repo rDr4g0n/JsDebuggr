@@ -8,6 +8,14 @@
 			"disabled": "false",
 			"scopes": [],
 			"syntaxes": ["JavaScript.sublime-syntax"]
+		},{
+			"name": "html",
+			"debugger": ";'JSDBG';if(%s)debugger; ",
+			"debuggerRegex": ";'JSDBG';if\\((.*)\\)debugger; ",
+			"enabled": "true",
+			"disabled": "false",
+			"scopes": ["source.js.embedded.html"],
+			"syntaxes": ["HTML.sublime-syntax"]
 		}
 	]
 }

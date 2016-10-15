@@ -31,3 +31,33 @@ def get_current_syntax(view, settings):
 
 def should_track(view):
     return view.settings().get("language", None) is not None
+
+def is_valid_scope(view):
+    """
+    checks selection in given view to determine
+    scope and compares against supported scopes
+    defined for this language
+    """
+    if not should_track(view):
+        return False
+    language = view.settings().get("language", None)
+    supported_scopes = language.get("scopes")
+    # if no scopes are specified, any point is ok
+    if len(supported_scopes) == 0:
+        return True
+    # NOTE - only gets scope of first selection
+    scope = view.scope_name(view.sel()[0].a).split()
+    matching = [s for s in supported_scopes if s in scope]
+    if len(matching) > 0:
+        return True
+    return False
+
+def if_valid_scope(fn):
+    def wrapper(*args, **kwargs):
+        # NOTE: assumes first arg is 
+        # self for a BreakpointList
+        # TODO - make safer
+        if is_valid_scope(args[0].view):
+            return fn(*args, **kwargs)
+        return False
+    return wrapper

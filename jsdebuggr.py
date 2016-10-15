@@ -2,27 +2,31 @@ import re
 import sublime
 import sublime_plugin
 from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegionException, MissingBreakpointException
-from .utils import debug, get_selected_line, get_line_num, get_current_syntax, should_track
+from .utils import debug, get_selected_line, get_line_num, get_current_syntax, should_track, is_valid_scope, if_valid_scope
 
 breakpointLists = BreakpointLists()
 # TODO - break languages out into its own thingy
 settings = sublime.load_settings("jsdebuggr.sublime-settings")
 
+
 class JsDebuggrAddCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
         debug("add at", lineNum)
         l.add(line)
 
+    @if_valid_scope
     def is_enabled(self):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
         b = l.get(line)
         return not b
-
+        
 
 class JsDebuggrRemoveCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -30,6 +34,7 @@ class JsDebuggrRemoveCommand(sublime_plugin.TextCommand):
         # TODO - catch missing bp err
         l.remove(line)
 
+    @if_valid_scope
     def is_enabled(self):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -38,6 +43,7 @@ class JsDebuggrRemoveCommand(sublime_plugin.TextCommand):
 
 
 class JsDebuggrEditCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -45,6 +51,7 @@ class JsDebuggrEditCommand(sublime_plugin.TextCommand):
         # TODO - catch missing bp err
         l.edit(line)
 
+    @if_valid_scope
     def is_enabled(self):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -53,13 +60,19 @@ class JsDebuggrEditCommand(sublime_plugin.TextCommand):
 
 
 class JsDebuggrRemoveAllCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         debug("remove all")
         l = breakpointLists.get(self.view)
         l.removeAll()
 
+    @if_valid_scope
+    def is_enabled(self):
+        return True
+
 
 class JsDebuggrDisableCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -67,7 +80,10 @@ class JsDebuggrDisableCommand(sublime_plugin.TextCommand):
         # TODO - catch missing bp err
         l.disable(line)
 
+    @if_valid_scope
     def is_enabled(self):
+        if not is_valid_scope(self.view):
+            return False
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
         b = l.get(line)
@@ -75,26 +91,38 @@ class JsDebuggrDisableCommand(sublime_plugin.TextCommand):
 
 
 class JsDebuggrDisableAllCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         debug("disable all")
         l = breakpointLists.get(self.view)
         l.disableAll()
 
+    @if_valid_scope
+    def is_enabled(self):
+        return True
+
 
 class JsDebuggrEnableAllCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         debug("enable all")
         l = breakpointLists.get(self.view)
         l.enableAll()
 
+    @if_valid_scope
+    def is_enabled(self):
+        return True
+
 
 class JsDebuggrEnableCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
         debug("enable at", lineNum)
         l.enable(line)
 
+    @if_valid_scope
     def is_enabled(self):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -103,6 +131,7 @@ class JsDebuggrEnableCommand(sublime_plugin.TextCommand):
 
 
 class JsDebuggrToggleCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -113,8 +142,13 @@ class JsDebuggrToggleCommand(sublime_plugin.TextCommand):
         else:
             l.add(line)
 
+    @if_valid_scope
+    def is_enabled(self):
+        return True
+
 
 class JsDebuggrToggleEditCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -123,9 +157,14 @@ class JsDebuggrToggleEditCommand(sublime_plugin.TextCommand):
         if not b:
             l.add(line)
         l.edit(line)
+            
+    @if_valid_scope
+    def is_enabled(self):
+        return True
 
 
 class JsDebuggrToggleEnableCommand(sublime_plugin.TextCommand):
+    @if_valid_scope
     def run(self, edit, **args):
         l = breakpointLists.get(self.view)
         line, lineNum = get_selected_line(self.view)
@@ -135,6 +174,10 @@ class JsDebuggrToggleEnableCommand(sublime_plugin.TextCommand):
             l.disable(line)
         elif b and not b.enabled:
             l.enable(line)
+            
+    @if_valid_scope
+    def is_enabled(self):
+        return True
 
 
 #write the debugger; statements to the document before save
