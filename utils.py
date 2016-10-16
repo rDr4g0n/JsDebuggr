@@ -1,6 +1,6 @@
 # I know theres a logging package, but st3 console
 # maybe introduces another layer or smoething?
-DEBUG = True
+DEBUG = False
 def debug(*args):
     if DEBUG:
         print("JsDebuggr:", *args)
