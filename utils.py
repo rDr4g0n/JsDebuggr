@@ -61,3 +61,13 @@ def if_valid_scope(fn):
             return fn(*args, **kwargs)
         return False
     return wrapper
+
+def if_should_track(fn):
+    def wrapper(*args, **kwargs):
+        # NOTE: assumes first arg is 
+        # self for a BreakpointList
+        # TODO - make safer
+        if should_track(args[0].view):
+            return fn(*args, **kwargs)
+        return False
+    return wrapper

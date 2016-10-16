@@ -2,7 +2,7 @@ import re
 import sublime
 import sublime_plugin
 from .breakpoint import Breakpoint, BreakpointList, BreakpointLists, MissingRegionException, MissingBreakpointException
-from .utils import debug, get_selected_line, get_line_num, get_current_syntax, should_track, is_valid_scope, if_valid_scope
+from .utils import debug, get_selected_line, get_line_num, get_current_syntax, should_track, is_valid_scope, if_valid_scope, if_should_track
 
 breakpointLists = BreakpointLists()
 # TODO - break languages out into its own thingy
@@ -66,7 +66,7 @@ class JsDebuggrRemoveAllCommand(sublime_plugin.TextCommand):
         l = breakpointLists.get(self.view)
         l.removeAll()
 
-    @if_valid_scope
+    @if_should_track
     def is_enabled(self):
         return True
 
@@ -97,7 +97,7 @@ class JsDebuggrDisableAllCommand(sublime_plugin.TextCommand):
         l = breakpointLists.get(self.view)
         l.disableAll()
 
-    @if_valid_scope
+    @if_should_track
     def is_enabled(self):
         return True
 
@@ -109,7 +109,7 @@ class JsDebuggrEnableAllCommand(sublime_plugin.TextCommand):
         l = breakpointLists.get(self.view)
         l.enableAll()
 
-    @if_valid_scope
+    @if_should_track
     def is_enabled(self):
         return True
 
