@@ -4,7 +4,7 @@ Debugging javascript can be tedious due to the lack of integration between the c
 
 The way JsDebuggr works is by inserting the `debugger` keyword at each breakpoint when the document is saved. Since this happens only when the document is saved, the user never sees the breakpoints. They just work :D
 
-![ScreenShot](https://raw.github.com/rDr4g0n/JsDebuggr/master/screens2.gif)
+![ScreenShot](https://raw.github.com/rDr4g0n/JsDebuggr/master/screens3.gif)
 
 Of course, the js engine executing the code needs to support the `debugger` keyword and debugging needs to be enabled (in Chrome, for instance, the developer console must be open).
 
@@ -66,4 +66,6 @@ TODO
 * show conditional as phantom?
 * add some sorta global breakpoint disable in js-land so users can disable breakpoints in their debugger
 * multiple selection support
+* config option to completely disable
+* config option to toggle debug logging
 * logpoints?
