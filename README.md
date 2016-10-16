@@ -32,7 +32,7 @@ This plugin is not a developer console replacement. You will still need to open 
 
 Installation
 ------------
-TODO - package control!
+From Sublime Text 3, assuming Package Control is installed, press `ctrl+shift+p` (Win, Linux) or cmd+shift+p (OS X) and start typing "Install Package". Select "Package Control: Install Package" from the list, then start typing "jsdebuggr", and select the package for install.  
 
 
 Usage
@@ -55,11 +55,6 @@ Additionally, the right click menu allows for:
 
 TODO
 ---------
-* README
-	* package control install instructions
-	* new gif
-* package control! yay!
-
 * more efficient is enabled checks for commands
 	* dont load anything if the syntax isnt supported
 	* dont check specific line scope for every option in the right click menu

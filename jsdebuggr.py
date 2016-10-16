@@ -243,6 +243,10 @@ class EventListener(sublime_plugin.EventListener):
             b.edit(condition)
             b.draw(view)
 
+        # reverse the list so the debuggers are removed
+        # in reverse order, preventing offset changes
+        # from wreaking havoc
+        existingDebuggers.reverse()
         # delete the debugger statements now that the
         # breakpoints have been created
         for d in existingDebuggers:
